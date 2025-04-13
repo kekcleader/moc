@@ -1,0 +1,8 @@
+_Build
+/moc
+*.c
+*.o
+*.h
+*.oh
+*.bak
+
