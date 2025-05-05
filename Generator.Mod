@@ -1,0 +1,12 @@
+MODULE Parser;
+IMPORT Out;
+
+CONST
+
+TYPE
+
+PROCEDURE Do*;
+BEGIN
+END Do;
+
+END Parser.

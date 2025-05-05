@@ -1,0 +1,12 @@
+MODULE Traverser;
+IMPORT Out;
+
+CONST
+
+TYPE
+
+PROCEDURE Do*;
+BEGIN
+END Do;
+
+END Traverser.

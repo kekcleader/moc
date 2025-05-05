@@ -1,0 +1,12 @@
+MODULE Builder;
+IMPORT Out;
+
+CONST
+
+TYPE
+
+PROCEDURE Do*;
+BEGIN
+END Do;
+
+END Builder.
