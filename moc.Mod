@@ -81,7 +81,7 @@ BEGIN
       Out.String('Could not parse.'); Out.Ln
     ELSE
       Out.String('Debug:'); Out.Ln;
-      Table.Print(module, 0) (*DEBUG*)
+      Table.Print(module, 1) (*DEBUG*)
     END
   END
 END Run;
@@ -94,7 +94,7 @@ BEGIN
   IF mainFname # '' THEN
     Run(mainFname, exeFname)
   ELSE
-    Out.String("No file specified."); Out.Ln
+    Out.String('No file specified.'); Out.Ln
   END
 END PraseAndRun;
 

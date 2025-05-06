@@ -1,11 +1,8 @@
 MODULE Table;
-IMPORT Out;
-
-CONST
-  identLen = 256;
+IMPORT Out, Scanner;
 
 TYPE
-  Ident = ARRAY identLen OF CHAR;
+  Ident = Scanner.Ident;
 
   Node* = POINTER TO NodeDesc;
   NodeDesc* = RECORD
