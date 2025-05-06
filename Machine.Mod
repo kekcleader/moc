@@ -2,7 +2,8 @@ MODULE Machine;
 IMPORT Out, MocErrors, Files;
 
 CONST
-  maxInt* = 2147483647;
+  maxInt* = 2147483647; (** Maximum integer value, 32-bit *)
+  maxExp* = 38; (** Maximum exponent of a real value *)
 
 TYPE
   Pos* = RECORD

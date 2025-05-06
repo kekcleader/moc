@@ -16,6 +16,10 @@ BEGIN
       Out.String("] '"); Out.String(S.strVal); Out.Char("'")
     ELSIF sym = S.int THEN
       Out.String('int '); Out.Int(S.intVal, 0)
+    ELSIF sym = S.real THEN
+      Out.String('real '); Out.Real(S.realVal, 0)
+    ELSIF sym = S.ident THEN
+      Out.String('ident '); Out.String(S.identVal)
     ELSIF sym = S.times     THEN Out.String('times')
     ELSIF sym = S.rdiv      THEN Out.String('rdiv')
     ELSIF sym = S.div       THEN Out.String('div')
@@ -35,17 +39,13 @@ BEGIN
     ELSIF sym = S.arrow     THEN Out.String('arrow')
     ELSIF sym = S.period    THEN Out.String('period')
     ELSIF sym = S.char      THEN Out.String('char')
-    ELSIF sym = S.int       THEN Out.String('int')
-    ELSIF sym = S.real      THEN Out.String('real')
     ELSIF sym = S.false     THEN Out.String('false')
     ELSIF sym = S.true      THEN Out.String('true')
     ELSIF sym = S.nil       THEN Out.String('nil')
-    ELSIF sym = S.string    THEN Out.String('string')
     ELSIF sym = S.not       THEN Out.String('not')
     ELSIF sym = S.lparen    THEN Out.String('lparen')
     ELSIF sym = S.lbrak     THEN Out.String('lbrak')
     ELSIF sym = S.lbrace    THEN Out.String('lbrace')
-    ELSIF sym = S.ident     THEN Out.String('ident')
     ELSIF sym = S.if        THEN Out.String('if')
     ELSIF sym = S.while     THEN Out.String('while')
     ELSIF sym = S.repeat    THEN Out.String('repeat')

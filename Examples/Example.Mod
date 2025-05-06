@@ -1,8 +1,11 @@
 MODULE Example;
-  "asdasasd" OF
-  'hello'
-  BY
-  ''
-  IN
-  ""
+  25X
+  25H
+  1234.567
+  1234.567
+  12.345E12
+  12.345E+12
+  12.345E-12
+  0.0D+0
+  0.0E+0
   IS
