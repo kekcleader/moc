@@ -118,6 +118,77 @@ BEGIN
   Machine.ErrorExpected(missingSym)
 END Missing;
 
+(** qualident = [ident "."] ident. *)
+
+(** ConstDeclaration = identdef "=" ConstExpression. *)
+
+(** ConstExpression = expression. *)
+
+(** TypeDeclaration = identdef "=" type. *)
+
+(** type = qualident | ArrayType | RecordType | PointerType | ProcedureType. *)
+
+(** ArrayType = ARRAY length {"," length} OF type.
+     length = ConstExpression. *)
+
+(** RecordType = RECORD ["(" BaseType ")"] [FieldListSequence] END.
+     BaseType = qualident. *)
+
+(** VariableDeclaration = IdentList ":" type.
+     IdentList = identdef {"," identdef}. *)
+
+(** designator = qualident {selector}.
+     selector = "." ident | "[" ExpList "]" | "^" | "(" qualident ")". *)
+
+(** expression = SimpleExpression [relation SimpleExpression].
+     relation = "=" | "#" | "<" | "<=" | ">" | ">=" | IN | IS. *)
+
+(** SimpleExpression = ["+" | "-"] term {AddOperator term}.
+     AddOperator = "+" | "-" | OR. *)
+
+(** term = factor {MulOperator factor}.
+     MulOperator = "*" | "/" | DIV | MOD | "&". *)
+
+(** factor = number | string | NIL | TRUE | FALSE |
+    set | designator [ActualParameters] | "(" expression ")" | "~" factor. *)
+
+(** ActualParameters = "(" [ExpList] ")" .
+     ExpList = expression {"," expression}. *)
+
+(** assignment = designator ":=" expression. *)
+
+(** ProcedureCall = designator [ActualParameters]. *)
+
+(** IfStatement = IF expression THEN StatementSequence
+    {ELSIF expression THEN StatementSequence}
+    [ELSE StatementSequence] END. *)
+
+(** WhileStatement = WHILE expression DO StatementSequence
+    {ELSIF expression DO StatementSequence} END. *)
+
+(** RepeatStatement = REPEAT StatementSequence UNTIL expression. *)
+
+(** StatementSequence = statement {";" statement}.
+     statement = [assignment | ProcedureCall | IfStatement | CaseStatement |
+    WhileStatement | RepeatStatement | ForStatement]. *)
+
+(** DeclarationSequence = [CONST {ConstDeclaration ";"}]
+    [TYPE {TypeDeclaration ";"}] [VAR {VariableDeclaration ";"}]
+    {ProcedureDeclaration ";"}. *)
+
+(** FormalParameters = "(" [FPSection {";" FPSection}] ")" [":" qualident].
+     FPSection = [VAR] ident {"," ident} ":" FormalType.
+     FormalType = {ARRAY OF} qualident. *)
+
+(** ProcedureDeclaration = ProcedureHeading ";" ProcedureBody ident.
+     ProcedureHeading = PROCEDURE identdef [FormalParameters].
+     ProcedureBody = DeclarationSequence [BEGIN StatementSequence]
+    [RETURN expression] END. *)
+
+(** module = MODULE ident ";" [ImportList] DeclarationSequence
+    [BEGIN StatementSequence] END ident "." .
+     ImportList = IMPORT import {"," import} ";".
+     import = ident [":=" ident]. *)
 PROCEDURE Module(): Tree.Node;
 VAR m: Tree.Node;
 BEGIN
