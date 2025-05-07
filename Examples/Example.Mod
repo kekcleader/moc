@@ -1,11 +1,13 @@
 MODULE Example;
-  25X
-  25H
-  1234.567
-  1234.567
-  12.345E12
-  12.345E+12
-  12.345E-12
-  0.0D+0
-  0.0E+0
-  IS
+IMPORT Out;
+VAR
+  x, y: INTEGER;
+  ch: CHAR;
+  a, b, c: BOOLEAN;
+BEGIN
+  x := 55;
+  y := 11;
+  x := x DIV y;
+  ch := 51X
+  x := (-x + y * 2 + x * x) MOD (y - x)
+END Example.

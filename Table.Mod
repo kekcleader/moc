@@ -56,6 +56,7 @@ TYPE
   ObjectDesc* = RECORD
     class*: INTEGER; (** See Object.class constants *)
     name*: Ident;
+    scope*: Object;
     dsc*: Object; (** Descendant object *)
     type*: Type;
     value*: INTEGER;
@@ -66,6 +67,18 @@ TYPE
 VAR topScope*, universe, system*: Object;
   byteType*, boolType*, charType*, intType*, realType*: Type;
   setType*, nilType*, noType*, strType*: Type;
+
+PROCEDURE NewConst*(): ConstVal;
+VAR c: ConstVal;
+BEGIN
+  NEW(c)
+RETURN c END NewConst;
+
+PROCEDURE NewObject*(): Object;
+VAR obj: Object;
+BEGIN
+  NEW(obj)
+RETURN obj END NewObject;
 
 PROCEDURE OpenScope*;
 VAR scope: Object;
@@ -86,6 +99,15 @@ PROCEDURE Init*;
 BEGIN
   topScope := universe
 END Init;
+
+PROCEDURE Import*(alias, name, selfName: Scanner.Ident);
+BEGIN
+  Out.String('importing '); Out.String(name);
+  Out.String(' as '); Out.String(alias);
+  Out.String(' to '); Out.String(selfName);
+  Out.Ln
+  (*TODO*)
+END Import;
 
 PROCEDURE MakeType(form: INTEGER; size: LONGINT): Type;
 VAR t: Type;

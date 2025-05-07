@@ -3,20 +3,6 @@ IMPORT Out, Strings, Table, Tree, Machine, S := Scanner, B := Builder;
 
 CONST
 
-  (** Object modes **)
-  Var = 1; VarPar = 2; Con = 3; Fld = 4; Typ = 5; LProc = 6; XProc = 7;
-  SProc = 8; CProc = 9; IProc = 10; Mod = 11; Head = 12; TProc = 13;
-
-  (* Structure forms *)
-  Undef = 0; Byte = 1; Bool = 2; Char = 3; SInt = 4; Int = 5; LInt = 6;
-  Real = 7; LReal = 8; Set = 9; String = 10; NilTyp = 11; NoTyp = 12;
-  Pointer = 13; ProcTyp = 14; Comp = 15;
-  intSet = {SInt..LInt};
-
-  (* composite structure forms *)
-  Basic = 1; StaticArr = 2; SDynArr = 3; DynArr = 4; OpenArr = 5; Record = 6;
-  ArraySet = {StaticArr, SDynArr, DynArr, OpenArr};
-
 TYPE
 
 VAR
@@ -104,19 +90,32 @@ BEGIN
   Out.String('eot'); Out.Ln
 END TestScanner;
 
-PROCEDURE Expect(expectedSym: INTEGER);
+(** Reports whether sym is the expected symbol. If not, reports an error. *)
+PROCEDURE Check(expectedSym: INTEGER): BOOLEAN;
+BEGIN
+  IF sym # expectedSym THEN
+    Machine.ErrorExpected(expectedSym)
+  END
+RETURN sym = expectedSym END Check;
+
+(** Checks that sym is the expected symbol and skips it, or reports an error. *)
+PROCEDURE Skip(expectedSym: INTEGER);
 BEGIN
   IF sym = expectedSym THEN
     S.Get(sym)
   ELSE
     Machine.ErrorExpected(expectedSym)
   END
-END Expect;
+END Skip;
 
-PROCEDURE Missing(missingSym: INTEGER);
+(** If sym is the expected symbol then skips it and returns true,
+    otherwise returns false. *)
+PROCEDURE Skipped(expectedSym: INTEGER): BOOLEAN;
+VAR ok: BOOLEAN;
 BEGIN
-  Machine.ErrorExpected(missingSym)
-END Missing;
+  ok := sym = expectedSym;
+  IF ok THEN S.Get(sym) END
+RETURN ok END Skipped;
 
 (** qualident = [ident "."] ident. *)
 
@@ -185,20 +184,50 @@ END Missing;
      ProcedureBody = DeclarationSequence [BEGIN StatementSequence]
     [RETURN expression] END. *)
 
+(** import = ident [":=" ident]. *)
+PROCEDURE Import(mod: Table.Object);
+VAR name: S.Ident;
+BEGIN
+  IF Check(S.ident) THEN
+    Strings.Copy(S.identVal, name);
+    S.Get(sym);
+    IF Skipped(S.becomes) THEN
+      Table.Import(name, S.identVal, mod.name);
+      S.Get(sym)
+    ELSE
+      Table.Import(name, name, mod.name);
+    END
+  END
+END Import;
+
 (** module = MODULE ident ";" [ImportList] DeclarationSequence
     [BEGIN StatementSequence] END ident "." .
-     ImportList = IMPORT import {"," import} ";".
-     import = ident [":=" ident]. *)
+     ImportList = IMPORT import {"," import} ";". *)
 PROCEDURE Module(VAR x: Tree.Node);
+VAR mod: Table.Object;
 BEGIN
-  B.Enter(x);
+  Skip(S.module);
+  IF Check(S.ident) THEN
+    mod := Table.NewObject();
+    mod.scope := Table.topScope;(*TODO*)
+    mod.class := Table.Mod;
+    mod.constVal := Table.NewConst();
+    mod.type := Table.noType;
+    Strings.Copy(S.identVal, mod.name);
+    S.Get(sym);
 
-  Expect(S.module);
-  IF sym # S.ident THEN
-    Missing(S.ident)
-  ELSE
-    (*Strings.Copy(S.identVal, x.name);*)
-    S.Get(sym)
+    Skip(S.semicolon);
+    IF Skipped(S.import) THEN
+      Import(mod);
+      WHILE Skipped(S.comma) DO
+        Import(mod)
+      END;
+      Skip(S.semicolon)
+    END;
+
+
+    B.Enter(x);
+    x.object := mod
   END
 END Module;
 

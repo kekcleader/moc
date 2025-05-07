@@ -21,7 +21,7 @@ BEGIN
     node := Tree.NewNode(Tree.NVarPar)
   ELSIF object.class = Table.Const THEN
     node := Tree.NewNode(Tree.NConst);
-    node.constVal := Tree.NewConst();
+    node.constVal := Table.NewConst();
     node.constVal^ := object.constVal^
   ELSIF object.class = Table.Typ THEN
     node := Tree.NewNode(Tree.NType)
