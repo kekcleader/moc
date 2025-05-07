@@ -1,7 +1,21 @@
 MODULE Parser;
-IMPORT Out, T := Table, Machine, S := Scanner;
+IMPORT Out, Strings, Table, Tree, Machine, S := Scanner;
 
 CONST
+
+  (** Object modes **)
+  Var = 1; VarPar = 2; Con = 3; Fld = 4; Typ = 5; LProc = 6; XProc = 7;
+  SProc = 8; CProc = 9; IProc = 10; Mod = 11; Head = 12; TProc = 13;
+
+  (* Structure forms *)
+  Undef = 0; Byte = 1; Bool = 2; Char = 3; SInt = 4; Int = 5; LInt = 6;
+  Real = 7; LReal = 8; Set = 9; String = 10; NilTyp = 11; NoTyp = 12;
+  Pointer = 13; ProcTyp = 14; Comp = 15;
+  intSet = {SInt..LInt};
+
+  (* composite structure forms *)
+  Basic = 1; StaticArr = 2; SDynArr = 3; DynArr = 4; OpenArr = 5; Record = 6;
+  ArraySet = {StaticArr, SDynArr, DynArr, OpenArr};
 
 TYPE
 
@@ -90,16 +104,37 @@ BEGIN
   Out.String('eot'); Out.Ln
 END TestScanner;
 
-PROCEDURE Module*(): T.Module;
-VAR m: T.Module;
+PROCEDURE Expect(expectedSym: INTEGER);
+BEGIN
+  IF sym = expectedSym THEN
+    S.Get(sym)
+  ELSE
+    Machine.ErrorExpected(expectedSym)
+  END
+END Expect;
+
+PROCEDURE Missing(missingSym: INTEGER);
+BEGIN
+  Machine.ErrorExpected(missingSym)
+END Missing;
+
+PROCEDURE Module(): Tree.Node;
+VAR m: Tree.Node;
+BEGIN
+  NEW(m);
+  Expect(S.module);
+  IF sym # S.ident THEN
+    Missing(S.ident)
+  ELSE
+    (*Strings.Copy(S.identVal, m.name);*)
+    S.Get(sym)
+  END
+RETURN m END Module;
+
+PROCEDURE Parse*(): Tree.Node;
 BEGIN
   S.Init;
-  S.Get(sym);
-  TestScanner;
-
-  NEW(m);
-  m.name := 'TestModule';
-  RETURN m
-END Module;
+  S.Get(sym)
+RETURN Module() END Parse;
 
 END Parser.

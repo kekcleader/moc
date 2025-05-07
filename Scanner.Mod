@@ -2,7 +2,7 @@ MODULE Scanner;
 IMPORT Out, Machine, Errors := MocErrors;
 
 CONST
-  identLen = 256;
+  identSize = 256;
   stringSize = 1024;
 
   uptoChar = 7FX; (** Used as a fix for double dot right after a digit *)
@@ -24,14 +24,15 @@ CONST
   var* = 65; procedure* = 66; begin* = 67; import* = 68; module* = 69; eot* = 70;
 
 TYPE
-  Ident* = ARRAY identLen OF CHAR;
+  Ident* = ARRAY identSize OF CHAR;
+  StrVal* = ARRAY stringSize OF CHAR;
 
 VAR
   (** Results of Get **)
   identVal*: Ident;
   intVal*: INTEGER;
   realVal*: REAL;
-  strVal*: ARRAY stringSize OF CHAR;
+  strVal*: StrVal;
   strLen*: INTEGER;
 
   (** - **)
@@ -75,7 +76,7 @@ END IsAlphaNum;
 (** Examines identVal and returns one of keyword lexical symbol constants,
     or ident if identVal is not a keyword. Uses the passed in actual length
     of identVal for speed. *)
-PROCEDURE IdentifyKeyWord(len: INTEGER): INTEGER;
+PROCEDURE IdentifyKeyword(len: INTEGER): INTEGER;
 VAR sym: INTEGER;
 BEGIN
   sym := ident;
@@ -121,13 +122,10 @@ BEGIN
     ELSIF identVal = "IMPORT" THEN sym := import
     ELSIF identVal = "MODULE" THEN sym := module
     END
-  ELSIF len = 7 THEN
-    IF    identVal = "INTEGER" THEN sym := int
-    ELSIF identVal = "POINTER" THEN sym := pointer
-    END
+  ELSIF (len = 7) & (identVal = "POINTER")   THEN sym := pointer
   ELSIF (len = 9) & (identVal = "PROCEDURE") THEN sym := procedure
   END
-RETURN sym END IdentifyKeyWord;
+RETURN sym END IdentifyKeyword;
 
 (** Skips a possibly nested comment. Precondition: ch = '*'. *)
 PROCEDURE SkipComment;
@@ -335,7 +333,7 @@ BEGIN
         Machine.Error(Errors.longIdent);
         identVal := ''
       END;
-      sym := IdentifyKeyWord(i)
+      sym := IdentifyKeyword(i)
     ELSIF IsDigit() THEN
       ReadNumber(sym)
     ELSIF (ch = '"') OR (ch = "'") THEN

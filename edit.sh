@@ -1,2 +1,2 @@
 #!/bin/bash
-vim -p Moc.Mod Machine.Mod MocErrors.Mod Scanner.Mod Parser.Mod Table.Mod Builder.Mod Examples/Example.Mod
+vim -p Parser.Mod Table.Mod Tree.Mod Builder.Mod Examples/Example.Mod Machine.Mod MocErrors.Mod Scanner.Mod

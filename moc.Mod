@@ -1,5 +1,5 @@
 MODULE Moc;
-IMPORT Out, Args, Strings, Machine, Parser, Scanner, Traverser, Table;
+IMPORT Out, Args, Strings, Machine, Parser, Scanner, Traverser, Table, Tree;
 CONST
   version = '1.0.0-alpha.1';
 
@@ -70,18 +70,18 @@ BEGIN
 END ParseArgs;
 
 PROCEDURE Run(mainFname, exeFname: ARRAY OF CHAR);
-VAR module: Table.Module;
+VAR module: Tree.Node;
 BEGIN
   IF ~Machine.OpenSourceFile(mainFname) THEN
     Out.String('Could not open source file "');
     Out.String(mainFname); Out.String('".'); Out.Ln
   ELSE
-    module := Parser.Module();
+    module := Parser.Parse();
     IF module = NIL THEN
       Out.String('Could not parse.'); Out.Ln
     ELSE
       Out.String('Debug:'); Out.Ln;
-      Table.Print(module, 1) (*DEBUG*)
+      Tree.Print(module, 1) (*DEBUG*)
     END
   END
 END Run;

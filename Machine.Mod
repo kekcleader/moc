@@ -19,14 +19,29 @@ VAR
   pos*: Pos;
   wasError*: BOOLEAN; (** TRUE after a call to Error *)
 
-PROCEDURE Error*(n: INTEGER);
-VAR s: ARRAY 1024 OF CHAR;
+PROCEDURE BeginError;
 BEGIN
   Out.String(fname); Out.Char(':');
   Out.Int(pos.line, 0); Out.Char(':');
-  Out.Int(pos.col, 0); Out.String(': error: ');
-  MocErrors.Message(n, s); Out.String(s); Out.Ln
+  Out.Int(pos.col, 0); Out.String(': error: ')
+END BeginError;
+
+PROCEDURE Error*(n: INTEGER);
+VAR s: ARRAY 1024 OF CHAR;
+BEGIN
+  BeginError;
+  MocErrors.Message(n, s);
+  Out.String(s); Out.Ln
 END Error;
+
+PROCEDURE ErrorExpected*(sym: INTEGER);
+BEGIN
+  BeginError;
+  Out.String('Symbol #');
+  Out.Int(sym, 0); (*FIXME output symbol name*)
+  Out.String(' expected');
+  Out.Ln
+END ErrorExpected;
 
 (** Returns next character from the file opened. On end of file return 0X.
     Keeps track of the current position in the file in terms of line:column. *)
