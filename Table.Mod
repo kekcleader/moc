@@ -3,8 +3,8 @@ IMPORT Out, Strings, Scanner;
 
 CONST
   (** Object.class values **)
-  Head* = 0; Const* = 1; Var*   = 2; Par* = 3; Fld* = 4;
-  Typ*  = 5; SProc* = 6; SFunc* = 7; Mod* = 8;
+  Head* = 0; Const* = 1; Var*   = 2; VarPar* = 3; Field* = 4;
+  Typ*  = 5; SProc* = 6; SFunc* = 7; Mod*    = 8;
 
   (** Type.form values **)
   Byte*   =  1; Bool*    =  2; Char*   =  3; Int*   = 4; Real* =  5;
@@ -56,10 +56,11 @@ TYPE
   ObjectDesc* = RECORD
     class*: INTEGER; (** See Object.class constants *)
     name*: Ident;
-    next*: Object;
     dsc*: Object; (** Descendant object *)
     type*: Type;
-    value*: INTEGER
+    value*: INTEGER;
+    constVal*: ConstVal;
+    next*: Object
   END;
 
 VAR topScope*, universe, system*: Object;

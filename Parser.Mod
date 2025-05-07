@@ -1,5 +1,5 @@
 MODULE Parser;
-IMPORT Out, Strings, Table, Tree, Machine, S := Scanner;
+IMPORT Out, Strings, Table, Tree, Machine, S := Scanner, B := Builder;
 
 CONST
 
@@ -189,23 +189,25 @@ END Missing;
     [BEGIN StatementSequence] END ident "." .
      ImportList = IMPORT import {"," import} ";".
      import = ident [":=" ident]. *)
-PROCEDURE Module(): Tree.Node;
-VAR m: Tree.Node;
+PROCEDURE Module(VAR x: Tree.Node);
 BEGIN
-  NEW(m);
+  B.Enter(x);
+
   Expect(S.module);
   IF sym # S.ident THEN
     Missing(S.ident)
   ELSE
-    (*Strings.Copy(S.identVal, m.name);*)
+    (*Strings.Copy(S.identVal, x.name);*)
     S.Get(sym)
   END
-RETURN m END Module;
+END Module;
 
 PROCEDURE Parse*(): Tree.Node;
+VAR module: Tree.Node;
 BEGIN
   S.Init;
-  S.Get(sym)
-RETURN Module() END Parse;
+  S.Get(sym);
+  Module(module)
+RETURN module END Parse;
 
 END Parser.
