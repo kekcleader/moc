@@ -29,7 +29,7 @@ TYPE
 
 VAR
   (** Results of Get **)
-  identVal*: Ident;
+  identVal*: Ident; (* FIXME Rename to name *)
   intVal*: INTEGER;
   realVal*: REAL;
   strVal*: StrVal;
@@ -287,7 +287,7 @@ BEGIN
     END;
     IF ch = 'X' THEN sym := char ELSE sym := int END;
     Machine.Read(ch)
-  ELSIF ch = '.' THEN (* Real number *)
+  ELSIF ch = '.' THEN (* Real number or integer + upto *)
     Machine.Read(ch);
     IF ch = '.' THEN (* Upto (..) right after a digit *)
       ch := uptoChar; (* Fix for Get to read upto symbol instead of period *)

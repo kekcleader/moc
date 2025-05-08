@@ -1,5 +1,5 @@
 MODULE Machine;
-IMPORT Out, MocErrors, Files;
+IMPORT Out, Errors := MocErrors, Files;
 
 CONST
   maxInt* = 2147483647; (** Maximum integer value, 32-bit *)
@@ -16,31 +16,44 @@ VAR
   fname: ARRAY 256 OF CHAR;
   r: Files.Rider;
   prevChar: CHAR;
-  pos*: Pos;
+  pos*: Pos; (** Current position in the source file being read *)
+  errorPos*: Pos; (** Position of the last error. If no errors, line = -1 *)
   wasError*: BOOLEAN; (** TRUE after a call to Error *)
 
-PROCEDURE BeginError;
+(** Begins output of an error if its position is different from the last one.
+    Returns true on success and false if the position is the same. *)
+PROCEDURE BeginError(): BOOLEAN;
+VAR ok: BOOLEAN;
 BEGIN
-  Out.String(fname); Out.Char(':');
-  Out.Int(pos.line, 0); Out.Char(':');
-  Out.Int(pos.col, 0); Out.String(': error: ')
-END BeginError;
+  IF (pos.line # errorPos.line) OR (pos.col # errorPos.col) THEN
+    Out.String(fname); Out.Char(':');
+    Out.Int(pos.line, 0); Out.Char(':');
+    Out.Int(pos.col, 0); Out.String(': ошибка: '); (*FIXME*)
+    errorPos := pos;
+    ok := TRUE
+  ELSE
+    ok := FALSE
+  END
+RETURN ok END BeginError;
 
 PROCEDURE Error*(n: INTEGER);
 VAR s: ARRAY 1024 OF CHAR;
 BEGIN
-  BeginError;
-  MocErrors.Message(n, s);
-  Out.String(s); Out.Ln
+  IF BeginError() THEN
+    Errors.Message(n, s);
+    Out.String(s); Out.Ln
+  END
 END Error;
 
-PROCEDURE ErrorExpected*(sym: INTEGER);
+PROCEDURE ErrorExpected*(symExpected, symFound: INTEGER);
 BEGIN
-  BeginError;
-  Out.String('Symbol #');
-  Out.Int(sym, 0); (*FIXME output symbol name*)
-  Out.String(' expected');
-  Out.Ln
+  IF BeginError() THEN
+    Errors.PrintSymbol(symExpected);
+    Out.String(' expected, but ');
+    Errors.PrintSymbol(symFound);
+    Out.String(' found');
+    Out.Ln
+  END
 END ErrorExpected;
 
 (** Returns next character from the file opened. On end of file return 0X.
@@ -74,6 +87,7 @@ BEGIN
   END;
   pos.line := 1;
   pos.col := 1;
+  errorPos.line := -1;
   wasError := F = NIL
 RETURN ~wasError END OpenSourceFile;
 

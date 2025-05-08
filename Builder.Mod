@@ -5,12 +5,16 @@ CONST
 
 TYPE
 
-PROCEDURE Enter*(VAR x: Tree.Node);
+PROCEDURE Enter*(procedures, statementSequence: Tree.Node;
+  containingProc: Table.Object): Tree.Node;
+VAR enter: Tree.Node;
 BEGIN
-  x := Tree.NewNode(Tree.NEnter);
-  x.type := Table.noType;
-  (*TODO*)
-END Enter;
+  enter := Tree.NewNode(Tree.NEnter);
+  enter.type := Table.noType;
+  enter.object := containingProc;
+  enter.left := procedures;
+  enter.right := statementSequence
+RETURN enter END Enter;
 
 PROCEDURE NewLeaf*(object: Table.Object): Tree.Node;
 VAR node: Tree.Node;
