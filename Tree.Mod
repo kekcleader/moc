@@ -1,5 +1,5 @@
 MODULE Tree;
-IMPORT Out, Scanner, T := Table;
+IMPORT Out, Scanner, T := Table, Errors := MocErrors;
 
 CONST
   (** Node.class values **)
@@ -58,7 +58,7 @@ BEGIN
   IF object # NIL THEN
     Out.Char("'"); Out.String(object.name); Out.Char("'");
     IF object.type # NIL THEN
-      Out.String(' Type=');
+      Out.Char(' ');
       PrintType(object.type)
     END
   END
@@ -99,7 +99,11 @@ END PrintNodeName;
 PROCEDURE Print*(node: Node; indent: INTEGER);
 BEGIN
   IF node # NIL THEN
-    Indent(indent); Out.String('== '); PrintNodeName(node);
+    Indent(indent); PrintNodeName(node);
+    IF (node.class = NDyadic) OR (node.class = NMonadic) THEN
+      Out.Char(' ');
+      Errors.PrintSymbol(node.subclass)
+    END;
     IF node.object # NIL THEN
       Out.String(' (Object: ');
       PrintObject(node.object);
@@ -110,18 +114,18 @@ BEGIN
       Out.Int(node.constVal.intVal, 0);
       Out.Char(')')
     END;
-    Out.String(' =='); Out.Ln;
+    Out.Ln;
     IF node.left # NIL THEN
-      Indent(indent); PrintNodeName(node); Out.String(' left:'); Out.Ln;
+      Indent(indent); Out.String('Left:'); Out.Ln;
       Print(node.left, indent + 1);
     END;
     IF node.right # NIL THEN
-      Indent(indent); PrintNodeName(node); Out.String(' right:'); Out.Ln;
+      Indent(indent); Out.String('Right:'); Out.Ln;
       Print(node.right, indent + 1);
     END;
     IF node.link # NIL THEN
-      Indent(indent); PrintNodeName(node); Out.String(' link:'); Out.Ln;
-      Print(node.link, indent + 1)
+      Indent(indent); Out.String('~ Link ~'); Out.Ln;
+      Print(node.link, indent)
     END
   END
 END Print;

@@ -185,15 +185,13 @@ BEGIN
     x := Designator();
     IF x.class = Table.SFunc THEN
       x := StandardFunc(x)
-    ELSE
-      IF Skipped(S.lparen) & (x.type.form = Table.Proc) &
-         (x.type.base.form # Table.NoTyp)
-      THEN
-        formalParams := Builder.PrepareCall(x);
-        actualParams := ActualParameters(formalParams);
-        x := Builder.Call(x, actualParams, formalParams);
-        Skip(S.rparen)
-      END
+    ELSIF Skipped(S.lparen) & (x.type.form = Table.Proc) &
+          (x.type.base.form # Table.NoTyp)
+    THEN
+      formalParams := Builder.PrepareCall(x);
+      actualParams := ActualParameters(formalParams);
+      x := Builder.Call(x, actualParams, formalParams);
+      Skip(S.rparen)
     END
   ELSIF sym = S.int THEN
     x := Builder.NewIntConst(S.intVal);
@@ -205,7 +203,13 @@ BEGIN
   ELSIF sym = S.real THEN
     x := Builder.NewRealConst(S.realVal);
     S.Get(sym)
+  ELSIF Skipped(S.not) THEN
+    x := Factor();
+    x := Builder.NewMonadicOperator(S.not, x)
   (*TODO true, false, string, nil, etc.*)
+  ELSIF Skipped(S.lparen) THEN (* Subexpression *)
+    x := Expression();
+    Skip(S.rparen)
   ELSE
     Machine.Error(Errors.noFactor);
     S.Get(sym);
@@ -220,8 +224,8 @@ VAR x, y: Tree.Node;
   op: INTEGER;
 BEGIN
   x := Factor();
-  (* {AddOperator term} *)
-  IF (S.times <= sym) & (sym <= S.and) THEN
+  (* {MulOperator factor} *)
+  WHILE (S.times <= sym) & (sym <= S.and) DO
     op := sym;
     S.Get(sym); (* op *)
     y := Factor();
@@ -239,15 +243,13 @@ BEGIN
   IF sym = S.minus THEN
     S.Get(sym);
     x := Term();
-    x := Builder.NewMonadicOperator(op, x)
-  ELSIF sym = S.plus THEN
-    S.Get(sym);
-    x := Term()
+    x := Builder.NewMonadicOperator(S.minus, x)
   ELSE
+    IF sym = S.plus THEN S.Get(sym) END;
     x := Term()
   END;
   (* {AddOperator term} *)
-  IF (S.plus <= sym) & (sym <= S.or) THEN
+  WHILE (S.plus <= sym) & (sym <= S.or) DO
     op := sym;
     S.Get(sym); (* op *)
     y := Term();
@@ -339,11 +341,14 @@ BEGIN
     REPEAT S.Get(sym) UNTIL (sym >= S.ident)
   END;
 
+  WHILE sym = S.semicolon DO S.Get(sym) END;
   first := Statement();
   prev := first;
   WHILE Skipped(S.semicolon) DO
+    WHILE sym = S.semicolon DO S.Get(sym) END;
     statement := Statement();
-    prev.link := statement
+    prev.link := statement;
+    prev := statement
   END
 RETURN first END StatementSequence;
 
@@ -510,7 +515,6 @@ END Import;
      ImportList = IMPORT import {"," import} ";". *)
 PROCEDURE Module(): Tree.Node;
 VAR module: Tree.Node;
-  mod: Table.Object;
   name: Ident;
   procedures, statementSequence: Tree.Node;
 BEGIN
@@ -538,11 +542,11 @@ BEGIN
     module := Builder.Enter(procedures, statementSequence, NIL);
     Skip(S.end);
     IF Check(S.ident) THEN
-      IF S.identVal # mod.name THEN
+      IF S.identVal # modName THEN
         Machine.Error(Errors.modNameMismatch)
       ELSE
         S.Get(sym); (* ident *)
-        Skip(S.semicolon)
+        Skip(S.period)
       END
     END
   END

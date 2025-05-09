@@ -95,6 +95,7 @@ BEGIN
     ELSIF identVal = "VAR" THEN sym := var
     ELSIF identVal = "NIL" THEN sym := nil
     ELSIF identVal = "DIV" THEN sym := div
+    ELSIF identVal = "MOD" THEN sym := mod
     ELSIF identVal = "FOR" THEN sym := for
     END
   ELSIF len = 4 THEN

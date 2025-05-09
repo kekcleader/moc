@@ -7,9 +7,10 @@ VAR
   ch: CHAR;
   a, b, c: BOOLEAN;
 BEGIN
-  x := 55;
+;;;;
+  x := x * x * x + x;
   y := 11;
+  x := (-x + y * 2 + x * x) MOD (y - x);
   x := x DIV y;
   ch := 51X;
-  x := (-x + y * 2 + x * x) MOD (y - x)
 END Example.
