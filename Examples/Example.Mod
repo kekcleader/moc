@@ -1,5 +1,7 @@
 MODULE Example;
 IMPORT Out;
+CONST
+  trees = 5;
 VAR
   x, y: INTEGER;
   ch: CHAR;
@@ -8,6 +10,6 @@ BEGIN
   x := 55;
   y := 11;
   x := x DIV y;
-  ch := 51X
+  ch := 51X;
   x := (-x + y * 2 + x * x) MOD (y - x)
 END Example.

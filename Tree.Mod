@@ -101,17 +101,28 @@ BEGIN
   IF node # NIL THEN
     Indent(indent); Out.String('== '); PrintNodeName(node);
     IF node.object # NIL THEN
-      Out.String('(Object: ');
+      Out.String(' (Object: ');
       PrintObject(node.object);
       Out.Char(')')
     END;
+    IF node.constVal # NIL THEN
+      Out.String(' (Const: ');
+      Out.Int(node.constVal.intVal, 0);
+      Out.Char(')')
+    END;
     Out.String(' =='); Out.Ln;
-    Indent(indent); PrintNodeName(node); Out.String(' left:'); Out.Ln;
-    Print(node.left, indent + 1);
-    Indent(indent); PrintNodeName(node); Out.String(' right:'); Out.Ln;
-    Print(node.right, indent + 1);
-    Indent(indent); PrintNodeName(node); Out.String(' link:'); Out.Ln;
-    Print(node.link, indent + 1)
+    IF node.left # NIL THEN
+      Indent(indent); PrintNodeName(node); Out.String(' left:'); Out.Ln;
+      Print(node.left, indent + 1);
+    END;
+    IF node.right # NIL THEN
+      Indent(indent); PrintNodeName(node); Out.String(' right:'); Out.Ln;
+      Print(node.right, indent + 1);
+    END;
+    IF node.link # NIL THEN
+      Indent(indent); PrintNodeName(node); Out.String(' link:'); Out.Ln;
+      Print(node.link, indent + 1)
+    END
   END
 END Print;
 

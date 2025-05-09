@@ -3,18 +3,33 @@ IMPORT Out, Strings, Int;
 
 CONST
   (** Errors **)
-  none*            = 0;
-  longIdent*       = 1;
-  longStr*         = 2;
-  unclosedStr*     = 3;
-  intOverflow*     = 4;
-  manyDigits*      = 5;
-  badInt*          = 6;
-  badReal*         = 7;
-  badChar*         = 8;
-  largeExponent*   = 9;
-  modNameMismatch* = 10;
-  noDigit*         = 30;
+  none*              = 0;
+  longIdent*         = 1;
+  longStr*           = 2;
+  unclosedStr*       = 3;
+  intOverflow*       = 4;
+  manyDigits*        = 5;
+  badInt*            = 6;
+  badReal*           = 7;
+  badChar*           = 8;
+  largeExponent*     = 9;
+  modNameMismatch*   = 10;
+  multipleImport*    = 11;
+  multipleDefs*      = 12;
+  aliasTaken*        = 13;
+  notConstant*       = 14;
+  notType*           = 15;
+  undefinedType*     = 16;
+  undefinedIdent*    = 17;
+  incompatibleTypes* = 18;
+  notImplemented*    = 19;
+
+  noDigit*           = 70;
+  noDeclaration*     = 71;
+  noStatement*       = 72;
+  noExpression*      = 73;
+  noFactor*          = 74;
+  noType*            = 75;
 
   (** Lexical symbols **)
   null = 0; times = 1; rdiv = 2; div = 3; mod = 4;
@@ -110,17 +125,33 @@ END PrintSymbol;
 
 PROCEDURE Message*(errno: INTEGER; VAR s: ARRAY OF CHAR);
 BEGIN
-  IF    errno = longIdent        THEN s := 'Identifier too long'
-  ELSIF errno = longStr          THEN s := 'String too long'
-  ELSIF errno = unclosedStr      THEN s := 'Unclosed string literal'
-  ELSIF errno = intOverflow      THEN s := 'Integer overflow'
-  ELSIF errno = manyDigits       THEN s := 'Too many digits'
-  ELSIF errno = badInt           THEN s := 'Bad integer literal'
-  ELSIF errno = badReal          THEN s := 'Bad real literal'
-  ELSIF errno = badChar          THEN s := 'Unexpected input character'
-  ELSIF errno = largeExponent    THEN s := 'Exponent too large'
-  ELSIF errno = noDigit          THEN s := 'Digit expected'
-  ELSIF errno = modNameMismatch  THEN s := 'Module name does not match'
+  IF    errno = longIdent         THEN s := 'Identifier too long'
+  ELSIF errno = longStr           THEN s := 'String too long'
+  ELSIF errno = unclosedStr       THEN s := 'Unclosed string literal'
+  ELSIF errno = intOverflow       THEN s := 'Integer overflow'
+  ELSIF errno = manyDigits        THEN s := 'Too many digits'
+  ELSIF errno = badInt            THEN s := 'Bad integer literal'
+  ELSIF errno = badReal           THEN s := 'Bad real literal'
+  ELSIF errno = badChar           THEN s := 'Unexpected input character'
+  ELSIF errno = largeExponent     THEN s := 'Exponent too large'
+  ELSIF errno = modNameMismatch   THEN s := 'Module name does not match'
+  ELSIF errno = multipleImport    THEN s := 'Module already imported'
+  ELSIF errno = multipleDefs      THEN s := 'Object already defined'
+  ELSIF errno = aliasTaken        THEN s := 'Module alias already taken'
+  ELSIF errno = notConstant       THEN s := 'Expression must be constant'
+  ELSIF errno = notType           THEN s := 'This is not a type'
+  ELSIF errno = undefinedType     THEN s := 'This type is undefined'
+  ELSIF errno = undefinedIdent    THEN s := 'Undefined identifier'
+  ELSIF errno = incompatibleTypes THEN s := 'Incompatible types'
+  ELSIF errno = notImplemented    THEN s := 'Feature not implemented'
+  ELSIF errno = noDigit           THEN s := 'Digit expected'
+  ELSIF errno = noDeclaration     THEN
+    s := 'CONST, TYPE, VAR, BEGIN, RETURN or END expected'
+  ELSIF errno = noStatement  THEN s := 'Statement expected'
+  ELSIF errno = noExpression THEN s := 'Expression expected'
+  ELSIF errno = noFactor     THEN s := 'Factor expected'
+  ELSIF errno = noType       THEN
+    s := 'ARRAY, RECORD, POINTER, PROCEDURE or identifier expected'
   ELSE
     s := '#ERR'; Int.Append(errno, s)
   END

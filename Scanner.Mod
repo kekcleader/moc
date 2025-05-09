@@ -102,7 +102,6 @@ BEGIN
     ELSIF identVal = "ELSE" THEN sym := else
     ELSIF identVal = "TRUE" THEN sym := true
     ELSIF identVal = "TYPE" THEN sym := type
-    ELSIF identVal = "CHAR" THEN sym := char
     ELSIF identVal = "REAL" THEN sym := real
     ELSIF identVal = "CASE" THEN sym := case
     END
@@ -388,7 +387,7 @@ BEGIN
     ELSIF ch < 'A' THEN (* ':'..'@' *)
       IF ch = ':' THEN
         Machine.Read(ch);
-        IF ch = '=' THEN Machine.Read(ch); sym := becomes ELSE sym := lparen END
+        IF ch = '=' THEN Machine.Read(ch); sym := becomes ELSE sym := colon END
       ELSIF ch = ';' THEN Machine.Read(ch); sym := semicolon
       ELSIF ch = '<' THEN
         Machine.Read(ch);

@@ -1,5 +1,5 @@
 MODULE Table;
-IMPORT Out, Strings, Scanner;
+IMPORT Out, Strings, Machine, Errors := MocErrors, Scanner;
 
 CONST
   (** Object.class values **)
@@ -30,6 +30,7 @@ TYPE
   ConstVal* = POINTER TO ConstValDesc;
   Type* = POINTER TO TypeDesc;
   Object* = POINTER TO ObjectDesc;
+  Module* = POINTER TO ModuleDesc;
 
   ConstExt* = POINTER TO ConstExtDesc;
   ConstExtDesc*= RECORD
@@ -56,12 +57,15 @@ TYPE
   ObjectDesc* = RECORD
     class*: INTEGER; (** See Object.class constants *)
     name*: Ident;
-    scope*: Object;
     dsc*: Object; (** Descendant object *)
     type*: Type;
     value*: INTEGER;
     constVal*: ConstVal;
     next*: Object
+  END;
+
+  ModuleDesc* = RECORD(ObjectDesc)
+    originalName*: Ident (** Original name of the module; name is alias *)
   END;
 
 VAR topScope*, universe, system*: Object;
@@ -74,10 +78,21 @@ BEGIN
   NEW(c)
 RETURN c END NewConst;
 
-PROCEDURE NewObject*(): Object;
-VAR obj: Object;
+PROCEDURE NewObject*(name: Ident; class: INTEGER): Object;
+VAR obj, x: Object;
 BEGIN
-  NEW(obj)
+  x := topScope;
+  WHILE (x.next # NIL) & (x.next.name # name) DO x := x.next END;
+  IF x.next = NIL THEN
+    NEW(obj);
+    Strings.Copy(name, obj.name);
+    obj.class := class;
+    obj.value := 0;
+    x.next := obj
+  ELSE
+    obj := x.next;
+    Machine.Error(Errors.multipleDefs)
+  END 
 RETURN obj END NewObject;
 
 PROCEDURE OpenScope*;
@@ -97,16 +112,97 @@ END CloseScope;
 
 PROCEDURE Init*;
 BEGIN
-  topScope := universe
+  topScope := universe;
+  OpenScope
 END Init;
 
+(** Finds the object and returns it. *)
+PROCEDURE ThisObject*(name: Ident): Object;
+VAR scope, obj: Object;
+BEGIN
+  scope := topScope;
+  REPEAT
+    obj := scope.next;
+    WHILE (obj # NIL) & (obj.name # name) DO obj := obj.next END;
+    scope := scope.dsc
+  UNTIL (obj # NIL) OR (scope = NIL)
+RETURN obj END ThisObject;
+
+(** Finds the object and returns it. *)
+PROCEDURE ThisImport*(module: Object; name: Ident): Object;
+VAR obj: Object;
+BEGIN
+  Machine.Error(Errors.notImplemented);
+  obj := module (*TODO*)
+RETURN obj END ThisImport;
+
+(** Finds or adds module and returns it. *)
+PROCEDURE ThisModule*(alias, name: Ident; declareNew: BOOLEAN): Object;
+VAR module: Module;
+  obj, prevObj: Object;
+BEGIN
+  (* Find module by name *)
+  prevObj := topScope;
+  obj := topScope.next;
+  WHILE (obj # NIL) & (obj(Module).originalName # name) DO
+    prevObj := obj;
+    obj := obj.next
+  END;
+  IF obj = NIL THEN (* New module *)
+    (* Make sure alias is not used *)
+    obj := topScope.next;
+    WHILE (obj # NIL) & (obj.name (*Alias*) # name) DO obj := obj.next END;
+    IF obj = NIL THEN (* All good, adding module to symbol table *)
+      NEW(module);
+      module.class := Mod;
+      Strings.Copy(name, module.originalName);
+      Strings.Copy(alias, module.name);
+      obj := module
+    ELSIF declareNew THEN (* Module already imported, could not declare *)
+      Machine.Error(Errors.multipleImport)
+    ELSE (* Module alias already used *)
+      Machine.Error(Errors.aliasTaken)
+    END
+  ELSIF declareNew THEN (* Module already imported, could not declare *)
+    Machine.Error(Errors.multipleImport)
+  END
+RETURN obj END ThisModule;
+
+PROCEDURE GetPseudoModuleObjects*(name: Scanner.Ident): Object;
+VAR list: Object;
+BEGIN
+  IF name = 'Out' THEN
+    NEW(list);
+    list.class := Const;
+    list.name := 'Char';
+    list.value := 233; (*FIXME*)
+
+    NEW(list.next);
+    list.next.class := Const;
+    list.next.name := 'Ln';
+    list.next.value := 234 (*FIXME*)
+  END
+RETURN list END GetPseudoModuleObjects;
+
 PROCEDURE Import*(alias, name, selfName: Scanner.Ident);
+VAR obj, objects, module: Object;
 BEGIN
   Out.String('importing '); Out.String(name);
   Out.String(' as '); Out.String(alias);
   Out.String(' to '); Out.String(selfName);
-  Out.Ln
-  (*TODO*)
+  Out.Ln;
+  IF name = 'SYSTEM' THEN
+    module := ThisModule(alias, name, TRUE);
+    module.dsc := system
+  ELSE
+    objects := GetPseudoModuleObjects(name);
+    IF objects = NIL THEN
+    ELSE
+      module := ThisModule(alias, name, TRUE);
+      module.dsc := objects
+    END
+  END;
+  obj := topScope.next
 END Import;
 
 PROCEDURE MakeType(form: INTEGER; size: LONGINT): Type;
@@ -117,6 +213,7 @@ BEGIN
   t.size := size
 RETURN t END MakeType;
 
+(** Creates a new object and places it in the beginning of the system list. *)
 PROCEDURE Enter(name: ARRAY OF CHAR; class: INTEGER;
   type: Type; paramCount, value: INTEGER);
 VAR obj: Object;
@@ -147,8 +244,7 @@ BEGIN
   noType   := MakeType(NoTyp,  4);
   strType  := MakeType(String, 8);
 
-  system := NIL;
-
+  (* Initialize Universe objects *)
   (* Standard functions *)
   Enter('UML',     SFunc, intType,  2, umlFunc);
   Enter('ROR',     SFunc, intType,  2, rorFunc);
@@ -182,13 +278,12 @@ BEGIN
   Enter('LONGINT', Typ,   intType,  0, 0); (* Alias to INTEGER *)
   Enter('INTEGER', Typ,   intType,  0, 0);
 
-  topScope := NIL;
   OpenScope;
   topScope.next := system;
   universe := topScope;
   system := NIL;
 
-  (* Unsafe pseudo-module SYSTEM *)
+  (* Initialize unsafe pseudo-module SYSTEM objects *)
   (* Functions *)
   Enter('SIZE', SFunc, intType,  1, sizeFunc);
   Enter('ADR',  SFunc, intType,  1, adrFunc);

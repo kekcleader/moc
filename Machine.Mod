@@ -36,11 +36,11 @@ BEGIN
   END
 RETURN ok END BeginError;
 
-PROCEDURE Error*(n: INTEGER);
+PROCEDURE Error*(errno: INTEGER);
 VAR s: ARRAY 1024 OF CHAR;
 BEGIN
   IF BeginError() THEN
-    Errors.Message(n, s);
+    Errors.Message(errno, s);
     Out.String(s); Out.Ln
   END
 END Error;
@@ -55,6 +55,20 @@ BEGIN
     Out.Ln
   END
 END ErrorExpected;
+
+PROCEDURE ErrorExpectedMsg*(errno, symFound: INTEGER);
+VAR s: ARRAY 1024 OF CHAR;
+BEGIN
+  IF BeginError() THEN
+    Errors.Message(errno, s);
+    Out.String(s);
+    Out.String(', but ');
+    Errors.PrintSymbol(symFound);
+    Out.String(' found');
+    Out.Ln
+  END
+END ErrorExpectedMsg;
+
 
 (** Returns next character from the file opened. On end of file return 0X.
     Keeps track of the current position in the file in terms of line:column. *)
