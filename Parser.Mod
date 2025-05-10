@@ -183,7 +183,7 @@ BEGIN
 
   IF sym = S.ident THEN
     x := Designator();
-    IF x.class = Table.SFunc THEN
+    IF x.class = Tree.NProc THEN
       x := StandardFunc(x)
     ELSIF Skipped(S.lparen) & (x.type.form = Table.Proc) &
           (x.type.base.form # Table.NoTyp)
@@ -205,7 +205,7 @@ BEGIN
     S.Get(sym)
   ELSIF Skipped(S.not) THEN
     x := Factor();
-    x := Builder.NewMonadicOperator(S.not, x)
+    x := Builder.MonadicOperator(S.not, x)
   (*TODO true, false, string, nil, etc.*)
   ELSIF Skipped(S.lparen) THEN (* Subexpression *)
     x := Expression();
@@ -229,7 +229,7 @@ BEGIN
     op := sym;
     S.Get(sym); (* op *)
     y := Factor();
-    x := Builder.NewDyadicOperator(op, x, y)
+    x := Builder.DyadicOperator(op, x, y)
   END
 RETURN x END Term;
 
@@ -243,7 +243,7 @@ BEGIN
   IF sym = S.minus THEN
     S.Get(sym);
     x := Term();
-    x := Builder.NewMonadicOperator(S.minus, x)
+    x := Builder.MonadicOperator(S.minus, x)
   ELSE
     IF sym = S.plus THEN S.Get(sym) END;
     x := Term()
@@ -253,7 +253,7 @@ BEGIN
     op := sym;
     S.Get(sym); (* op *)
     y := Term();
-    x := Builder.NewDyadicOperator(op, x, y)
+    x := Builder.DyadicOperator(op, x, y)
   END
 RETURN x END SimpleExpression;
 
@@ -268,7 +268,7 @@ BEGIN
     relation := sym;
     S.Get(sym); (* relation *)
     y := SimpleExpression();
-    x := Builder.NewDyadicOperator(relation, x, y)
+    x := Builder.DyadicOperator(relation, x, y)
   ELSIF sym = S.in THEN
     Machine.Error(Errors.notImplemented)
   ELSIF sym = S.is THEN
@@ -356,11 +356,11 @@ RETURN first END StatementSequence;
 PROCEDURE ConstExpression(): Tree.Node;
 VAR const: Tree.Node;
 BEGIN
-  S.Get(sym); (*FIXME*)
-  const := Tree.NewNode(Tree.NConst);
-  const.type := Table.intType;
-  const.constVal := Table.NewConst();
-  const.constVal.intVal := 25
+  const := Expression();
+  IF const.class # Tree.NConst THEN
+    Machine.Error(Errors.notConstant);
+    const := Builder.NewIntConst(0)
+  END
 RETURN const END ConstExpression;
 
 (** ConstDeclaration = identdef "=" ConstExpression.

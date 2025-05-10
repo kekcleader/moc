@@ -32,38 +32,6 @@ BEGIN
   END
 END Indent;
 
-PROCEDURE PrintType(type: T.Type);
-BEGIN
-  IF type # NIL THEN
-    IF    type.form = T.Byte    THEN Out.String('Byte')
-    ELSIF type.form = T.Bool    THEN Out.String('Bool')
-    ELSIF type.form = T.Char    THEN Out.String('Char')
-    ELSIF type.form = T.Int     THEN Out.String('Int')
-    ELSIF type.form = T.Real    THEN Out.String('Real')
-    ELSIF type.form = T.Set     THEN Out.String('Set')
-    ELSIF type.form = T.Pointer THEN Out.String('Pointer')
-    ELSIF type.form = T.NilTyp  THEN Out.String('NilTyp')
-    ELSIF type.form = T.NoTyp   THEN Out.String('NoTyp')
-    ELSIF type.form = T.Proc    THEN Out.String('Proc')
-    ELSIF type.form = T.String  THEN Out.String('String')
-    ELSIF type.form = T.Array   THEN Out.String('Array')
-    ELSIF type.form = T.Record  THEN Out.String('Record')
-    ELSE Out.String('UNKNOWN')
-    END
-  END
-END PrintType;
-
-PROCEDURE PrintObject(object: T.Object);
-BEGIN
-  IF object # NIL THEN
-    Out.Char("'"); Out.String(object.name); Out.Char("'");
-    IF object.type # NIL THEN
-      Out.Char(' ');
-      PrintType(object.type)
-    END
-  END
-END PrintObject;
-
 PROCEDURE PrintNodeName(node: Node);
 BEGIN
   IF node.class = NVar THEN Out.String('NVar')
@@ -106,7 +74,7 @@ BEGIN
     END;
     IF node.object # NIL THEN
       Out.String(' (Object: ');
-      PrintObject(node.object);
+      T.PrintObject(node.object, 0);
       Out.Char(')')
     END;
     IF node.constVal # NIL THEN

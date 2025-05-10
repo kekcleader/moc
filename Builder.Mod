@@ -1,5 +1,5 @@
 MODULE Builder;
-IMPORT Out, Machine, Errors := MocErrors, Table, Tree;
+IMPORT Out, Machine, Errors := MocErrors, Table, Tree, S := Scanner;
 
 PROCEDURE Enter*(procedures, statementSequence: Tree.Node;
   containingProc: Table.Object): Tree.Node;
@@ -52,24 +52,111 @@ BEGIN
   node.type := object.type
 RETURN node END NewLeaf;
 
-PROCEDURE NewMonadicOperator*(op: INTEGER; x: Tree.Node): Tree.Node;
+(** Performs an optimized monadic operation op on x or creates a new
+    monadic operator node. Returns the modified or created node.
+     The supported operations are: ~, -, IS, convesion, ABS, CAP,
+    ODD, ADR, CC. *)
+PROCEDURE MonadicOperator*(op: INTEGER; x: Tree.Node): Tree.Node;
 VAR mondaic: Tree.Node;
 BEGIN
-  mondaic := Tree.NewNode(Tree.NMonadic);
-  mondaic.subclass := op;
-  mondaic.type := x.type; (*FIXME*)
-  mondaic.left := x
-RETURN mondaic END NewMonadicOperator;
+  IF x.class = Tree.NConst THEN
+    IF op = S.not THEN
+      IF x.type.form = Table.Bool THEN
+        x.constVal.intVal := 1 - x.constVal.intVal
+      (* TODO Table.Set *)
+      ELSE
+        Machine.Error(Errors.badMonadicOperand)
+      END
+    ELSIF op = S.minus THEN
+      IF x.type.form = Table.Int THEN
+        x.constVal.intVal := -x.constVal.intVal
+      (* TODO form = Table.Set *)
+      ELSE
+        Machine.Error(Errors.badMonadicOperand)
+      END
+    END
+  ELSE
+    mondaic := Tree.NewNode(Tree.NMonadic);
+    mondaic.subclass := op;
+    mondaic.type := x.type; (*FIXME*)
+    mondaic.left := x
+  END
+RETURN mondaic END MonadicOperator;
 
-PROCEDURE NewDyadicOperator*(op: INTEGER; x, y: Tree.Node): Tree.Node;
+(** Performs an optimized dyadic operation op on NConst nodes x and y.
+    Returns the modified node x.
+     The supported operations are: *, DIV, MOD, &, +, -, OR, =, #,
+    <, <=, >, >=, IN, ASH, LEN, BIT, LSH, ROT. *)
+PROCEDURE DyadicConstOperator*(op: INTEGER; x, y: Tree.Node): Tree.Node;
+VAR f: INTEGER;
+BEGIN
+  f := x.type.form;
+  IF y.type.form # f THEN
+    Machine.Error(Errors.incompatibleTypes)
+  ELSIF op = S.times THEN
+    IF f = Table.Int THEN
+      x.constVal.intVal := x.constVal.intVal * y.constVal.intVal
+    ELSIF f = Table.Real THEN
+      x.constVal.realVal := x.constVal.realVal * y.constVal.realVal
+    ELSE
+      Machine.Error(Errors.badDyadicOperands)
+    END
+  ELSIF op = S.div THEN
+    (*TODO*)
+  ELSIF op = S.mod THEN
+    (*TODO*)
+  ELSIF op = S.and THEN
+    (*TODO*)
+  ELSIF op = S.plus THEN
+    IF f = Table.Int THEN
+      x.constVal.intVal := x.constVal.intVal + y.constVal.intVal
+    ELSIF f = Table.Real THEN
+      x.constVal.realVal := x.constVal.realVal + y.constVal.realVal
+    ELSE
+      Machine.Error(Errors.badDyadicOperands)
+    END
+  ELSIF op = S.minus THEN
+    IF f = Table.Int THEN
+      x.constVal.intVal := x.constVal.intVal - y.constVal.intVal
+    ELSIF f = Table.Real THEN
+      x.constVal.realVal := x.constVal.realVal - y.constVal.realVal
+    ELSE
+      Machine.Error(Errors.badDyadicOperands)
+    END
+  ELSIF op = S.or THEN
+    (*TODO*)
+  ELSIF op = S.eql THEN
+    (*TODO*)
+  ELSIF op = S.neq THEN
+    (*TODO*)
+  ELSIF op = S.lss THEN
+    (*TODO*)
+  ELSIF op = S.leq THEN
+    (*TODO*)
+  ELSIF op = S.gtr THEN
+    (*TODO*)
+  ELSIF op = S.geq THEN
+  (* TODO IN etc. *)
+  END
+RETURN x END DyadicConstOperator;
+
+(** Performs an optimized dyadic operation op on x and y or creates a new
+    dyadic operator node. Returns the modified node x or a new node.
+     The supported operations are: *, DIV, MOD, &, +, -, OR, =, #,
+    <, <=, >, >=, IN, ASH, LEN, BIT, LSH, ROT. *)
+PROCEDURE DyadicOperator*(op: INTEGER; x, y: Tree.Node): Tree.Node;
 VAR dyadic: Tree.Node;
 BEGIN
-  dyadic := Tree.NewNode(Tree.NDyadic);
-  dyadic.subclass := op;
-  dyadic.type := x.type; (*FIXME*)
-  dyadic.left := x;
-  dyadic.right := y
-RETURN dyadic END NewDyadicOperator;
+  IF (x.class = Tree.NConst) & (y.class = Tree.NConst) THEN
+    dyadic := DyadicConstOperator(op, x, y)
+  ELSE 
+    dyadic := Tree.NewNode(Tree.NDyadic);
+    dyadic.subclass := op;
+    dyadic.type := x.type; (*FIXME change type depending on the op?*)
+    dyadic.left := x;
+    dyadic.right := y
+  END
+RETURN dyadic END DyadicOperator;
 
 (** Appends list y to the end of the list x..last. *)
 PROCEDURE Link*(VAR x, last: Tree.Node; y: Tree.Node);

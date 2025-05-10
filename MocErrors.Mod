@@ -22,7 +22,9 @@ CONST
   undefinedType*     = 16;
   undefinedIdent*    = 17;
   incompatibleTypes* = 18;
-  notImplemented*    = 19;
+  badMonadicOperand* = 19;
+  badDyadicOperands* = 20;
+  notImplemented*    = 21;
 
   noDigit*           = 70;
   noDeclaration*     = 71;
@@ -143,6 +145,10 @@ BEGIN
   ELSIF errno = undefinedType     THEN s := 'This type is undefined'
   ELSIF errno = undefinedIdent    THEN s := 'Undefined identifier'
   ELSIF errno = incompatibleTypes THEN s := 'Incompatible types'
+  ELSIF errno = badMonadicOperand THEN
+    s := 'Operation not applicable to this type'
+  ELSIF errno = badDyadicOperands THEN
+    s := 'Operation not applicable to these types'
   ELSIF errno = notImplemented    THEN s := 'Feature not implemented'
   ELSIF errno = noDigit           THEN s := 'Digit expected'
   ELSIF errno = noDeclaration     THEN

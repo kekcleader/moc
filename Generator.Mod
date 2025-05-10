@@ -1,4 +1,4 @@
-MODULE Parser;
+MODULE Generator;
 IMPORT Out;
 
 CONST
@@ -9,4 +9,4 @@ PROCEDURE Do*;
 BEGIN
 END Do;
 
-END Parser.
+END Generator.
