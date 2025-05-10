@@ -39,8 +39,10 @@ BEGIN
     node := Tree.NewNode(Tree.NVarPar)
   ELSIF object.class = Table.Const THEN
     node := Tree.NewNode(Tree.NConst);
-    node.constVal := Table.NewConst();
-    node.constVal^ := object.constVal^
+    IF object.constVal # NIL THEN
+      node.constVal := Table.NewConst();
+      node.constVal^ := object.constVal^
+    END
   ELSIF object.class = Table.Typ THEN
     node := Tree.NewNode(Tree.NType)
   ELSIF object.class IN {Table.SProc, Table.SFunc} THEN
@@ -169,7 +171,7 @@ END Link;
 PROCEDURE Param*(VAR actual: Tree.Node; formal: Table.Object);
 VAR t: Table.Type;
 BEGIN
-  IF formal.type.form # Table.NoTyp THEN
+  IF formal.type.form # Table.NoType THEN
     IF actual.type # formal.type THEN
       Machine.Error(Errors.incompatibleTypes)
     END

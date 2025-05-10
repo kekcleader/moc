@@ -5,6 +5,8 @@ CONST
   maxInt* = 2147483647; (** Maximum integer value, 32-bit *)
   maxExp* = 38; (** Maximum exponent of a real value *)
 
+  pointerSize* = 8; (** In bytes *)
+
 TYPE
   Pos* = RECORD
     line*, col*: INTEGER

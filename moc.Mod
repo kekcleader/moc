@@ -80,10 +80,11 @@ BEGIN
     IF module = NIL THEN
       Out.String('Could not parse.'); Out.Ln
     ELSE
+    (*
       Out.String('--- Abstract Syntax Tree ---'); Out.Ln;
       Tree.Print(module, 0);
       Out.String('--- Symbol Table ---'); Out.Ln;
-      Table.Print(Table.topScope, 0)
+      Table.Print(Table.topScope, 0)*)
     END
   END
 END Run;

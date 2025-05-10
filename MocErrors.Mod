@@ -19,12 +19,14 @@ CONST
   aliasTaken*        = 13;
   notConstant*       = 14;
   notType*           = 15;
-  undefinedType*     = 16;
-  undefinedIdent*    = 17;
-  incompatibleTypes* = 18;
-  badMonadicOperand* = 19;
-  badDyadicOperands* = 20;
-  notImplemented*    = 21;
+  notProcedure*      = 16;
+  procCallFunc*      = 17;
+  undefinedType*     = 18;
+  undefinedIdent*    = 19;
+  incompatibleTypes* = 20;
+  badMonadicOperand* = 21;
+  badDyadicOperands* = 22;
+  notImplemented*    = 23;
 
   noDigit*           = 70;
   noDeclaration*     = 71;
@@ -142,6 +144,8 @@ BEGIN
   ELSIF errno = aliasTaken        THEN s := 'Module alias already taken'
   ELSIF errno = notConstant       THEN s := 'Expression must be constant'
   ELSIF errno = notType           THEN s := 'This is not a type'
+  ELSIF errno = notProcedure      THEN s := 'This is not a procedure'
+  ELSIF errno = procCallFunc      THEN s := 'Procedure call of a function'
   ELSIF errno = undefinedType     THEN s := 'This type is undefined'
   ELSIF errno = undefinedIdent    THEN s := 'Undefined identifier'
   ELSIF errno = incompatibleTypes THEN s := 'Incompatible types'

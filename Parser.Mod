@@ -15,7 +15,12 @@ VAR
 
 PROCEDURE DD(n: INTEGER);
 BEGIN
-  Out.String('---DEBUG---'); Out.Int(n, 2); Out.String(' ---'); Out.Ln
+  Out.Char(1BX); Out.String('[41m');
+  Out.Char(1BX); Out.String('[30m');
+  Out.String(' ========================> DEBUG ===> ');
+  Out.Char(1BX); Out.String('[97m');
+  Out.Int(n, 0); Out.Char(' ');
+  Out.Char(1BX); Out.String('[0m'); Out.Ln
 END DD;
 
 PROCEDURE TestScanner;
@@ -70,24 +75,23 @@ BEGIN
   IF ok THEN S.Get(sym) END
 RETURN ok END Skipped;
 
-PROCEDURE StandardFunc(x: Tree.Node): Tree.Node;
+PROCEDURE StandardProcedure(x: Tree.Node): Tree.Node;
 BEGIN
   Machine.Error(Errors.notImplemented)
-RETURN x END StandardFunc;
+RETURN x END StandardProcedure;
 
 (** qualident = [ident "."] ident. *)
 PROCEDURE Qualident(): Table.Object;
 VAR object: Table.Object;
 BEGIN
   object := Table.ThisObject(S.identVal);
-  S.Get(sym);(* ident *)
+  S.Get(sym); (* ident *)
   IF object = NIL THEN
     Machine.Error(Errors.undefinedIdent);
     object := dummy
   END;
 
   IF (object.class = Table.Mod) & Skipped(S.period) THEN
-    S.Get(sym); (* . *)
     IF ~Check(S.ident) THEN
       object := dummy
     ELSE
@@ -118,21 +122,24 @@ BEGIN
       REPEAT S.Get(sym) UNTIL (sym = S.eot) OR (sym = S.rbrak);
       S.Get(sym) (* rbrak, TODO *)
     ELSIF sym = S.period DO (* Record field *)
+      S.Get(sym); (*TODO*)
       Machine.Error(Errors.notImplemented)
     ELSIF sym = S.arrow DO (* Pointer dereference *)
+      S.Get(sym); (*TODO*)
       Machine.Error(Errors.notImplemented)
     ELSIF (sym = S.lparen) & (* Type guard *)
           (designator.type.form IN {Table.Record, Table.Pointer})
     DO
       Machine.Error(Errors.notImplemented);
       REPEAT S.Get(sym) UNTIL (sym = S.eot) OR (sym = S.rparen);
-      S.Get(sym) (* rparen, TODO *)
+      Skip(S.rparen) (*TODO*)
     END
   END
 RETURN designator END Designator;
 
 (** ActualParameters = "(" [ExpList] ")".
-     ExpList = expression {"," expression}. *)
+     ExpList = expression {"," expression}.
+     Precondition: sym = S.lparen *)
 PROCEDURE ActualParameters(formal: Table.Object): Tree.Node;
 VAR actual, list, last: Tree.Node;
   n: INTEGER;
@@ -160,12 +167,32 @@ BEGIN
   Skip(S.rparen)
 RETURN list END ActualParameters;
 
-(** ProcedureCall = designator [ActualParameters]. *)
+(** ProcedureCall = designator [ActualParameters].
+     Precondition: designator already read. *)
 PROCEDURE ProcedureCall(designator: Tree.Node): Tree.Node;
-VAR assign, expr: Tree.Node;
+VAR formalParams: Table.Object;
+  actualParams, x: Tree.Node;
 BEGIN
-  Machine.Error(Errors.notImplemented)
-RETURN assign END ProcedureCall;
+  IF designator.class = Tree.NProc THEN
+    IF designator.object.class = Table.SFunc THEN
+      Machine.Error(Errors.procCallFunc)
+    ELSE (* class = SProc *)
+      x := StandardProcedure(designator)
+    END
+  ELSIF (designator.class = Tree.NConst) & (designator.object.type.form = Table.Proc) THEN
+    formalParams := Builder.PrepareCall(designator);
+    IF sym = S.lparen THEN
+      actualParams := ActualParameters(formalParams);
+      Skip(S.rparen)
+    END;
+    IF designator.type.base.form # Table.NoType THEN
+      Machine.Error(Errors.procCallFunc)
+    END;
+    x := Builder.Call(designator, actualParams, formalParams)
+  ELSE
+    Machine.Error(Errors.noStatement)
+  END
+RETURN x END ProcedureCall;
 
 (** factor = number | string | NIL | TRUE | FALSE |
     set | designator [ActualParameters] | "(" expression ")" | "~" factor. *)
@@ -183,15 +210,15 @@ BEGIN
 
   IF sym = S.ident THEN
     x := Designator();
-    IF x.class = Tree.NProc THEN
-      x := StandardFunc(x)
+    IF (x.class = Tree.NProc) & (x.object.class = Table.SFunc) THEN
+      x := StandardProcedure(x)
     ELSIF Skipped(S.lparen) & (x.type.form = Table.Proc) &
-          (x.type.base.form # Table.NoTyp)
+          (x.type.base.form # Table.NoType)
     THEN
       formalParams := Builder.PrepareCall(x);
       actualParams := ActualParameters(formalParams);
-      x := Builder.Call(x, actualParams, formalParams);
-      Skip(S.rparen)
+      Skip(S.rparen);
+      x := Builder.Call(x, actualParams, formalParams)
     END
   ELSIF sym = S.int THEN
     x := Builder.NewIntConst(S.intVal);
@@ -276,7 +303,8 @@ BEGIN
   END
 RETURN x END Expression;
 
-(** assignment = designator ":=" expression. *)
+(** assignment = designator ":=" expression.
+     Precondition: designator and ":=" already read. *)
 PROCEDURE Assignment(designator: Tree.Node): Tree.Node;
 VAR assign, expr: Tree.Node;
 BEGIN
@@ -395,7 +423,7 @@ BEGIN
     obj := Qualident();
     IF obj.class # Table.Typ THEN
       Machine.Error(Errors.notType)
-    ELSIF (obj.type = NIL) OR (obj.type.form = Table.NoTyp) THEN
+    ELSIF (obj.type = NIL) OR (obj.type.form = Table.NoType) THEN
       Machine.Error(Errors.undefinedType)
     ELSE
       type := obj.type

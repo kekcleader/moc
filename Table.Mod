@@ -7,9 +7,9 @@ CONST
   Typ*  = 5; SProc* = 6; SFunc* = 7; Mod*    = 8;
 
   (** Type.form values **)
-  Byte*   =  1; Bool*    =  2; Char*   =  3; Int*   = 4; Real* =  5;
-  Set*    =  6; Pointer* =  7; NilTyp* =  8; NoTyp* = 9; Proc* = 10;
-  String* = 11; Array*   = 12; Record* = 13;
+  Byte*   =  1; Bool*    =  2; Char*    =  3; Int*    = 4; Real* =  5;
+  Set*    =  6; Pointer* =  7; NilType* =  8; NoType* = 9; Proc* = 10;
+  String* = 11; Array*   = 12; Record*  = 13;
 
   (** Standard procedure numbers **)
   umlFunc*   =  1; rorFunc* =  2; asrFunc*    =  3; lslFunc*  =  4;
@@ -72,11 +72,29 @@ VAR topScope*, universe, system*: Object;
   byteType*, boolType*, charType*, intType*, realType*: Type;
   setType*, nilType*, noType*, strType*: Type;
 
+PROCEDURE DD(n: INTEGER);
+BEGIN
+  Out.Char(1BX); Out.String('[41m');
+  Out.Char(1BX); Out.String('[30m');
+  Out.String(' ========================> DEBUG ===> ');
+  Out.Char(1BX); Out.String('[97m');
+  Out.Int(n, 0); Out.Char(' ');
+  Out.Char(1BX); Out.String('[0m'); Out.Ln
+END DD;
+
 PROCEDURE NewConst*(): ConstVal;
 VAR c: ConstVal;
 BEGIN
   NEW(c)
 RETURN c END NewConst;
+
+PROCEDURE NewType(form, size: INTEGER): Type;
+VAR t: Type;
+BEGIN
+  NEW(t);
+  t.form := form;
+  t.size := size
+RETURN t END NewType;
 
 PROCEDURE NewObject*(name: Ident; class: INTEGER): Object;
 VAR obj, x: Object;
@@ -132,8 +150,10 @@ RETURN obj END ThisObject;
 PROCEDURE ThisImport*(module: Object; name: Ident): Object;
 VAR obj: Object;
 BEGIN
-  Machine.Error(Errors.notImplemented);
-  obj := module (*TODO*)
+  IF module.name # '' THEN
+    obj := module.dsc;
+    WHILE (obj # NIL) & (obj.name # name) DO obj := obj.next END
+  END
 RETURN obj END ThisImport;
 
 (** Finds or adds module and returns it. *)
@@ -157,6 +177,9 @@ BEGIN
       module.class := Mod;
       Strings.Copy(name, module.originalName);
       Strings.Copy(alias, module.name);
+      (* Add to symbol table *)
+      module.next := topScope.next;
+      topScope.next := module;
       obj := module
     ELSIF declareNew THEN (* Module already imported, could not declare *)
       Machine.Error(Errors.multipleImport)
@@ -168,21 +191,49 @@ BEGIN
   END
 RETURN obj END ThisModule;
 
-PROCEDURE GetPseudoModuleObjects*(name: Scanner.Ident): Object;
-VAR list: Object;
+(** Returns a list of objects inside module with the given name.
+     The supported module is Out. *)
+PROCEDURE PseudoImport*(name: Scanner.Ident): Object;
+VAR list, o, p: Object;
+  t: Type;
 BEGIN
   IF name = 'Out' THEN
-    NEW(list);
-    list.class := Const;
-    list.name := 'Char';
-    list.value := 233; (*FIXME*)
+    (* Out.Int *)
+    NEW(o);
+    list := o;
+    o.class := Const;
+    o.name := 'Int';
+    o.value := 233; (*FIXME*)
+    t := NewType(Proc, Machine.pointerSize);
+    o.type := t;
+    t.paramCount := 2;
+    t.base := noType;
+    (* Parameters *)
+    NEW(p);
+    t.dsc := p;
+    p.class := Var;
+    p.name := 'i';
+    p.type := intType;
+    p.value := 0; (* FIXME? *)
+    NEW(p.next);
+    p := p.next;
+    p.class := Var;
+    p.name := 'n';
+    p.type := intType;
+    p.value := 0; (* FIXME? *)
 
-    NEW(list.next);
-    list.next.class := Const;
-    list.next.name := 'Ln';
-    list.next.value := 234 (*FIXME*)
+    (* Out.Ln *)
+    NEW(o.next);
+    o := o.next;
+    o.class := Const;
+    o.name := 'Ln';
+    o.value := 234; (*FIXME*)
+    t := NewType(Proc, Machine.pointerSize);
+    o.type := t;
+    t.paramCount := 0;
+    t.base := noType
   END
-RETURN list END GetPseudoModuleObjects;
+RETURN list END PseudoImport;
 
 PROCEDURE Import*(alias, name, selfName: Scanner.Ident);
 VAR obj, objects, module: Object;
@@ -195,8 +246,9 @@ BEGIN
     module := ThisModule(alias, name, TRUE);
     module.dsc := system
   ELSE
-    objects := GetPseudoModuleObjects(name);
+    objects := PseudoImport(name);
     IF objects = NIL THEN
+      Machine.Error(Errors.notImplemented)
     ELSE
       module := ThisModule(alias, name, TRUE);
       module.dsc := objects
@@ -204,34 +256,6 @@ BEGIN
   END;
   obj := topScope.next
 END Import;
-
-PROCEDURE MakeType(form: INTEGER; size: LONGINT): Type;
-VAR t: Type;
-BEGIN
-  NEW(t);
-  t.form := form;
-  t.size := size
-RETURN t END MakeType;
-
-(** Creates a new object and places it in the beginning of the system list. *)
-PROCEDURE Enter(name: ARRAY OF CHAR; class: INTEGER;
-  type: Type; paramCount, value: INTEGER);
-VAR obj: Object;
-BEGIN
-  NEW(obj);
-  Strings.Copy(name, obj.name);
-  obj.class := class;
-  obj.type := type;
-  (*obj.paramCount := paramCount; FIXME*)
-  obj.value := value;
-  obj.dsc := NIL;
-  IF class = Typ THEN
-    type.typeObj := obj
-  END;
-  (* Prepend obj to the list pointed to by system *)
-  obj.next := system;
-  system := obj
-END Enter;
 
 (** Outputs 2n spaces. *)
 PROCEDURE Indent(n: INTEGER);
@@ -269,8 +293,8 @@ BEGIN
     ELSIF type.form = Real    THEN Out.String('Real')
     ELSIF type.form = Set     THEN Out.String('Set')
     ELSIF type.form = Pointer THEN Out.String('Pointer')
-    ELSIF type.form = NilTyp  THEN Out.String('NilTyp')
-    ELSIF type.form = NoTyp   THEN Out.String('NoTyp')
+    ELSIF type.form = NilType  THEN Out.String('NilType')
+    ELSIF type.form = NoType   THEN Out.String('NoType')
     ELSIF type.form = Proc    THEN Out.String('Proc')
     ELSIF type.form = String  THEN Out.String('String')
     ELSIF type.form = Array   THEN Out.String('Array')
@@ -322,16 +346,36 @@ BEGIN
   END
 END Print;
 
+(** Creates a new object and places it in the beginning of the system list. *)
+PROCEDURE Enter(name: ARRAY OF CHAR; class: INTEGER;
+  type: Type; paramCount, value: INTEGER);
+VAR obj: Object;
 BEGIN
-  byteType := MakeType(Int,    1);
-  boolType := MakeType(Bool,   1);
-  charType := MakeType(Char,   1);
-  intType  := MakeType(Int,    4);
-  realType := MakeType(Real,   4);
-  setType  := MakeType(Set,    4);
-  nilType  := MakeType(NilTyp, 4);
-  noType   := MakeType(NoTyp,  4);
-  strType  := MakeType(String, 8);
+  NEW(obj);
+  Strings.Copy(name, obj.name);
+  obj.class := class;
+  obj.type := type;
+  (*obj.paramCount := paramCount; FIXME*)
+  obj.value := value;
+  obj.dsc := NIL;
+  IF class = Typ THEN
+    type.typeObj := obj
+  END;
+  (* Prepend obj to the list pointed to by system *)
+  obj.next := system;
+  system := obj
+END Enter;
+
+BEGIN
+  byteType := NewType(Int,     1);
+  boolType := NewType(Bool,    1);
+  charType := NewType(Char,    1);
+  intType  := NewType(Int,     4);
+  realType := NewType(Real,    4);
+  setType  := NewType(Set,     4);
+  nilType  := NewType(NilType, 4);
+  noType   := NewType(NoType,  4);
+  strType  := NewType(String,  8);
 
   (* Initialize Universe objects *)
   (* Standard functions *)
