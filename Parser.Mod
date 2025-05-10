@@ -75,10 +75,10 @@ BEGIN
   IF ok THEN S.Get(sym) END
 RETURN ok END Skipped;
 
-PROCEDURE StandardProcedure(x: Tree.Node): Tree.Node;
+PROCEDURE StandardProcedureCall(x: Tree.Node): Tree.Node;
 BEGIN
   Machine.Error(Errors.notImplemented)
-RETURN x END StandardProcedure;
+RETURN x END StandardProcedureCall;
 
 (** qualident = [ident "."] ident. *)
 PROCEDURE Qualident(): Table.Object;
@@ -140,29 +140,39 @@ RETURN designator END Designator;
 (** ActualParameters = "(" [ExpList] ")".
      ExpList = expression {"," expression}.
      Precondition: sym = S.lparen *)
-PROCEDURE ActualParameters(formal: Table.Object): Tree.Node;
+PROCEDURE ActualParameters(procedure: Tree.Node;
+  formal: Table.Object): Tree.Node;
 VAR actual, list, last: Tree.Node;
-  n: INTEGER;
+  n, paramCount: INTEGER;
 BEGIN
   Skip(S.lparen);
+  n := 0;
+  paramCount := procedure.object.type.paramCount;
   IF sym # S.rparen THEN
     actual := Expression();
-    IF formal # NIL THEN
+    IF formal = NIL THEN
+      Machine.Error(Errors.manyArguments);
+    ELSE
       Builder.Param(actual, formal);
       list := actual;
       last := list;
       formal := formal.next;
-      n := 1;
+      INC(n);
       WHILE Skipped(S.comma) DO
         actual := Expression();
         IF formal # NIL THEN
           Builder.Param(actual, formal);
           last.link := actual;
           formal := formal.next;
-          INC(n)
-        END
+        END;
+        INC(n)
       END
     END
+  END;
+  IF n < paramCount THEN
+    Machine.Error(Errors.fewArguments)
+  ELSIF n > paramCount THEN
+    Machine.Error(Errors.manyArguments)
   END;
   Skip(S.rparen)
 RETURN list END ActualParameters;
@@ -173,24 +183,24 @@ PROCEDURE ProcedureCall(designator: Tree.Node): Tree.Node;
 VAR formalParams: Table.Object;
   actualParams, x: Tree.Node;
 BEGIN
-  IF designator.class = Tree.NProc THEN
+  IF (designator.class # Tree.NProc) OR
+     (designator.object.type.form # Table.Proc) THEN
+    Machine.Error(Errors.notProcedure)
+  ELSIF designator.object.constVal.intVal > 0 THEN (* Standard procedure *)
     IF designator.object.class = Table.SFunc THEN
       Machine.Error(Errors.procCallFunc)
     ELSE (* class = SProc *)
-      x := StandardProcedure(designator)
+      x := StandardProcedureCall(designator)
     END
-  ELSIF (designator.class = Tree.NConst) & (designator.object.type.form = Table.Proc) THEN
+  ELSE (* Non-standard procedure *)
     formalParams := Builder.PrepareCall(designator);
     IF sym = S.lparen THEN
-      actualParams := ActualParameters(formalParams);
-      Skip(S.rparen)
+      actualParams := ActualParameters(designator, formalParams)
     END;
     IF designator.type.base.form # Table.NoType THEN
       Machine.Error(Errors.procCallFunc)
     END;
     x := Builder.Call(designator, actualParams, formalParams)
-  ELSE
-    Machine.Error(Errors.noStatement)
   END
 RETURN x END ProcedureCall;
 
@@ -211,12 +221,12 @@ BEGIN
   IF sym = S.ident THEN
     x := Designator();
     IF (x.class = Tree.NProc) & (x.object.class = Table.SFunc) THEN
-      x := StandardProcedure(x)
+      x := StandardProcedureCall(x)
     ELSIF Skipped(S.lparen) & (x.type.form = Table.Proc) &
           (x.type.base.form # Table.NoType)
     THEN
       formalParams := Builder.PrepareCall(x);
-      actualParams := ActualParameters(formalParams);
+      actualParams := ActualParameters(x, formalParams);
       Skip(S.rparen);
       x := Builder.Call(x, actualParams, formalParams)
     END
@@ -356,6 +366,9 @@ BEGIN
     statement := WhileStatement()
   ELSIF (sym = S.case) OR (sym = S.repeat) OR (sym = S.for) THEN
     Machine.Error(Errors.notImplemented)
+  END;
+  IF statement = NIL THEN (* In case of error *)
+    statement := Tree.NewNode(Tree.NTrap)
   END
 RETURN statement END Statement;
 

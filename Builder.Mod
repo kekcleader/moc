@@ -1,6 +1,16 @@
 MODULE Builder;
 IMPORT Out, Machine, Errors := MocErrors, Table, Tree, S := Scanner;
 
+PROCEDURE DD(n: INTEGER);
+BEGIN
+  Out.Char(1BX); Out.String('[41m');
+  Out.Char(1BX); Out.String('[30m');
+  Out.String(' ========================> DEBUG ===> ');
+  Out.Char(1BX); Out.String('[97m');
+  Out.Int(n, 0); Out.Char(' ');
+  Out.Char(1BX); Out.String('[0m'); Out.Ln
+END DD;
+
 PROCEDURE Enter*(procedures, statementSequence: Tree.Node;
   containingProc: Table.Object): Tree.Node;
 VAR enter: Tree.Node;
@@ -38,10 +48,14 @@ BEGIN
   ELSIF object.class = Table.VarPar THEN
     node := Tree.NewNode(Tree.NVarPar)
   ELSIF object.class = Table.Const THEN
-    node := Tree.NewNode(Tree.NConst);
-    IF object.constVal # NIL THEN
-      node.constVal := Table.NewConst();
-      node.constVal^ := object.constVal^
+    IF (object.type # NIL) & (object.type.form = Table.Proc) THEN
+      node := Tree.NewNode(Tree.NProc)
+    ELSE (* constant *)
+      node := Tree.NewNode(Tree.NConst);
+      IF object.constVal # NIL THEN
+        node.constVal := Table.NewConst();
+        node.constVal^ := object.constVal^
+      END
     END
   ELSIF object.class = Table.Typ THEN
     node := Tree.NewNode(Tree.NType)
@@ -178,16 +192,22 @@ BEGIN
   END
 END Param;
 
-(** Returns a list of formal parameters of function x. *)
+(** Returns a list of formal parameters of procedure x. *)
 PROCEDURE PrepareCall*(x: Tree.Node): Table.Object;
 VAR list: Table.Object;
 BEGIN
-  list := NIL (* TODO *)
+  list := x.object.type.dsc
 RETURN list END PrepareCall;
 
-PROCEDURE Call*(x, actualParams: Tree.Node;
+(** Creates and returns a new NCall node. *)
+PROCEDURE Call*(procedure, actualParams: Tree.Node;
   formalParams: Table.Object): Tree.Node;
+VAR call: Tree.Node;
 BEGIN
-RETURN x END Call;
+  call := Tree.NewNode(Tree.NCall);
+  call.left := procedure;
+  call.right := actualParams
+  (* TODO check parameters *)
+RETURN call END Call;
 
 END Builder.

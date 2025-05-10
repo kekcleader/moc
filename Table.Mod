@@ -59,7 +59,6 @@ TYPE
     name*: Ident;
     dsc*: Object; (** Descendant object *)
     type*: Type;
-    value*: INTEGER;
     constVal*: ConstVal;
     next*: Object
   END;
@@ -105,7 +104,6 @@ BEGIN
     NEW(obj);
     Strings.Copy(name, obj.name);
     obj.class := class;
-    obj.value := 0;
     x.next := obj
   ELSE
     obj := x.next;
@@ -203,7 +201,8 @@ BEGIN
     list := o;
     o.class := Const;
     o.name := 'Int';
-    o.value := 233; (*FIXME*)
+    NEW(o.constVal);
+    o.constVal.intVal := -21; (*FIXME*)
     t := NewType(Proc, Machine.pointerSize);
     o.type := t;
     t.paramCount := 2;
@@ -214,20 +213,19 @@ BEGIN
     p.class := Var;
     p.name := 'i';
     p.type := intType;
-    p.value := 0; (* FIXME? *)
     NEW(p.next);
     p := p.next;
     p.class := Var;
     p.name := 'n';
     p.type := intType;
-    p.value := 0; (* FIXME? *)
 
     (* Out.Ln *)
     NEW(o.next);
     o := o.next;
     o.class := Const;
     o.name := 'Ln';
-    o.value := 234; (*FIXME*)
+    NEW(o.constVal);
+    o.constVal.intVal := -20; (*FIXME*)
     t := NewType(Proc, Machine.pointerSize);
     o.type := t;
     t.paramCount := 0;
@@ -238,7 +236,7 @@ RETURN list END PseudoImport;
 PROCEDURE Import*(alias, name, selfName: Scanner.Ident);
 VAR obj, objects, module: Object;
 BEGIN
-  Out.String('importing '); Out.String(name);
+  Out.String('Importing '); Out.String(name);
   Out.String(' as '); Out.String(alias);
   Out.String(' to '); Out.String(selfName);
   Out.Ln;
@@ -274,7 +272,7 @@ BEGIN
       Out.String('NO TYPE')
     ELSE
       f := type.form;
-      IF (f = Byte) OR (f = Bool) OR (f = Char) OR (f = Int) THEN
+      IF (f = Byte) OR (f = Bool) OR (f = Char) OR (f = Int) OR (f = Proc) THEN
         Out.Int(const.intVal, 0)
       ELSIF f = Real THEN
         Out.Real(const.realVal, 0)
@@ -356,7 +354,8 @@ BEGIN
   obj.class := class;
   obj.type := type;
   (*obj.paramCount := paramCount; FIXME*)
-  obj.value := value;
+  NEW(obj.constVal);
+  obj.constVal.intVal := value;
   obj.dsc := NIL;
   IF class = Typ THEN
     type.typeObj := obj

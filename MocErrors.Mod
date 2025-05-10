@@ -27,6 +27,8 @@ CONST
   badMonadicOperand* = 21;
   badDyadicOperands* = 22;
   notImplemented*    = 23;
+  fewArguments*      = 24;
+  manyArguments*     = 25;
 
   noDigit*           = 70;
   noDeclaration*     = 71;
@@ -154,6 +156,8 @@ BEGIN
   ELSIF errno = badDyadicOperands THEN
     s := 'Operation not applicable to these types'
   ELSIF errno = notImplemented    THEN s := 'Feature not implemented'
+  ELSIF errno = fewArguments      THEN s := 'Too few arguments to procedure'
+  ELSIF errno = manyArguments     THEN s := 'Too many arguments to procedure'
   ELSIF errno = noDigit           THEN s := 'Digit expected'
   ELSIF errno = noDeclaration     THEN
     s := 'CONST, TYPE, VAR, BEGIN, RETURN or END expected'

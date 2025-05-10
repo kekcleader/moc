@@ -14,7 +14,8 @@ BEGIN
   x := (-x + y * 2 + x * x) MOD (y - x);
   x := x DIV y;
   ch := 51X;
-  Out.Int(x, 10);
-  Out.Int(y, 10);
+  Out.Int(x, 5);
+  Out.Int(x, 5);
+  Out.Int(y + x, 10);
   Out.Ln
 END Example.

@@ -7,6 +7,8 @@ CONST
 
   pointerSize* = 8; (** In bytes *)
 
+  debugFrontend* = TRUE;
+
 TYPE
   Pos* = RECORD
     line*, col*: INTEGER
@@ -20,13 +22,14 @@ VAR
   prevChar: CHAR;
   pos*: Pos; (** Current position in the source file being read *)
   errorPos*: Pos; (** Position of the last error. If no errors, line = -1 *)
-  wasError*: BOOLEAN; (** TRUE after a call to Error *)
+  hadErrors*: BOOLEAN; (** TRUE after a call to Error *)
 
 (** Begins output of an error if its position is different from the last one.
     Returns true on success and false if the position is the same. *)
 PROCEDURE BeginError(): BOOLEAN;
 VAR ok: BOOLEAN;
 BEGIN
+  hadErrors := TRUE;
   IF (pos.line # errorPos.line) OR (pos.col # errorPos.col) THEN
     Out.String(fname); Out.Char(':');
     Out.Int(pos.line, 0); Out.Char(':');
@@ -104,8 +107,8 @@ BEGIN
   pos.line := 1;
   pos.col := 1;
   errorPos.line := -1;
-  wasError := F = NIL
-RETURN ~wasError END OpenSourceFile;
+  hadErrors := F = NIL
+RETURN ~hadErrors END OpenSourceFile;
 
 PROCEDURE SetDebug*(value: BOOLEAN);
 BEGIN
