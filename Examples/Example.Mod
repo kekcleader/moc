@@ -8,14 +8,14 @@ VAR
   ch: CHAR;
   a, b, c: BOOLEAN;
 BEGIN
-;;;;
   x := x * x * x + x;
   y := 11 + trees * apple;
-  x := (-x + y * 2 + x * x) MOD (y - x);
-  x := x DIV y;
+  x := (-x + y * 2 + x * x) + (y - x);
+  x := x - y;
   ch := 51X;
   Out.Int(x, 5);
-  Out.Int(x, 5);
+  Out.Int(y, 4);
+  Out.Ln;
   Out.Int(y + x, 10);
   Out.Ln
 END Example.

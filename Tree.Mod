@@ -10,6 +10,9 @@ CONST
   NIfElse* = 20; NCase*     = 21; NWhile*  = 22; NRepeat* = 23; NTrap*   = 28;
   NFixup*  = 31;
 
+  (** Node.subclass values **)
+  assign* = 1;
+
 TYPE
   Ident = Scanner.Ident;
 
@@ -17,7 +20,7 @@ TYPE
   NodeDesc* = RECORD
     left*, right*, link*: Node;
     class*: INTEGER; (** See Node.class constants *)
-    subclass*: INTEGER;
+    subclass*: INTEGER; (** See Node.subclass constants *)
     type*: T.Type;
     object*: T.Object;
     constVal*: T.ConstVal

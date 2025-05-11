@@ -320,6 +320,7 @@ VAR assign, expr: Tree.Node;
 BEGIN
   expr := Expression();
   assign := Tree.NewNode(Tree.NAssign);
+  assign.subclass := Tree.assign;
   assign.left := designator;
   assign.right := expr
 RETURN assign END Assignment;

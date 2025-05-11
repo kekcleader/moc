@@ -77,15 +77,15 @@ BEGIN
     Out.String(mainFname); Out.String('".'); Out.Ln
   ELSE
     module := Parser.Parse();
-    IF module = NIL THEN
-      Out.String('Could not parse.'); Out.Ln
-    ELSE
-      IF Machine.debugFrontend & ~Machine.hadErrors THEN
+    IF ~Machine.hadErrors THEN
+      IF Machine.debugFrontend THEN
         Out.String('--- Abstract Syntax Tree ---'); Out.Ln;
         Tree.Print(module, 0);
-        (*Out.String('--- Symbol Table ---'); Out.Ln;
-        Table.Print(Table.topScope, 0)*)
-      END
+        Out.String('--- Symbol Table ---'); Out.Ln;
+        Table.Print(Table.topScope, 0)
+      END;
+
+      Traverser.Traverse(module)
     END
   END
 END Run;

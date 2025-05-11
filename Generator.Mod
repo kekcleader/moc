@@ -5,8 +5,8 @@ CONST
 
 TYPE
 
-PROCEDURE Do*;
+PROCEDURE Init*;
 BEGIN
-END Do;
+END Init;
 
 END Generator.
