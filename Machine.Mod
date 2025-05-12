@@ -9,6 +9,8 @@ CONST
 
   debugFrontend* = TRUE;
 
+  compilerName* = 'moc';
+
 TYPE
   Pos* = RECORD
     line*, col*: INTEGER
@@ -74,6 +76,17 @@ BEGIN
   END
 END ErrorExpectedMsg;
 
+(** Outputs an error message that is not connected to a particular
+    position in the code. *)
+PROCEDURE GeneralError*(errno: INTEGER);
+VAR s: ARRAY 1024 OF CHAR;
+BEGIN
+  hadErrors := TRUE;
+  Out.String(compilerName);
+  Out.String(': error: ');
+  Errors.Message(errno, s);
+  Out.String(s); Out.Ln
+END GeneralError;
 
 (** Returns next character from the file opened. On end of file return 0X.
     Keeps track of the current position in the file in terms of line:column. *)

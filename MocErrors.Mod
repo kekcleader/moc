@@ -37,6 +37,10 @@ CONST
   noFactor*          = 74;
   noType*            = 75;
 
+  (** General errors **)
+  outputFile*        = 101;
+  outOfMemory*       = 102;
+
   (** Lexical symbols **)
   null = 0; times = 1; rdiv = 2; div = 3; mod = 4;
   and = 5; plus = 6; minus = 7; or = 8; eql = 9;
@@ -166,6 +170,8 @@ BEGIN
   ELSIF errno = noFactor     THEN s := 'Factor expected'
   ELSIF errno = noType       THEN
     s := 'ARRAY, RECORD, POINTER, PROCEDURE or identifier expected'
+  ELSIF errno = outputFile   THEN s := 'Could not open output file'
+  ELSIF errno = outOfMemory  THEN s := 'Out of code memory'
   ELSE
     s := '#ERR'; Int.Append(errno, s)
   END

@@ -1,5 +1,5 @@
 MODULE Moc;
-IMPORT Out, Args, Strings, Machine, Parser, Scanner, Traverser, Table, Tree;
+IMPORT Out, Args, Strings, Machine, Parser, Scanner, Traverser, Table, Tree, Linker;
 CONST
   version = '1.0.0-alpha.1';
 
@@ -85,7 +85,10 @@ BEGIN
         Table.Print(Table.topScope, 0)
       END;
 
-      Traverser.Traverse(module)
+      Traverser.Traverse(module);
+      IF ~Machine.hadErrors THEN
+        Linker.Link(exeFname)
+      END
     END
   END
 END Run;
