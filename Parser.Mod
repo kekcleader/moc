@@ -77,7 +77,7 @@ RETURN ok END Skipped;
 
 PROCEDURE StandardProcedureCall(x: Tree.Node): Tree.Node;
 BEGIN
-  Machine.Error(Errors.notImplemented)
+  Machine.NotImplemented('standard procedure call')
 RETURN x END StandardProcedureCall;
 
 (** qualident = [ident "."] ident. *)
@@ -118,19 +118,19 @@ BEGIN
   IF designator.class # Table.SProc THEN
     (* Selectors *)
     WHILE sym = S.lbrak DO (* Array index *)
-      Machine.Error(Errors.notImplemented);
+      Machine.NotImplemented('array index');
       REPEAT S.Get(sym) UNTIL (sym = S.eot) OR (sym = S.rbrak);
       S.Get(sym) (* rbrak, TODO *)
     ELSIF sym = S.period DO (* Record field *)
       S.Get(sym); (*TODO*)
-      Machine.Error(Errors.notImplemented)
+      Machine.NotImplemented('record field')
     ELSIF sym = S.arrow DO (* Pointer dereference *)
       S.Get(sym); (*TODO*)
-      Machine.Error(Errors.notImplemented)
+      Machine.NotImplemented('pointer dereference')
     ELSIF (sym = S.lparen) & (* Type guard *)
           (designator.type.form IN {Table.Record, Table.Pointer})
     DO
-      Machine.Error(Errors.notImplemented);
+      Machine.NotImplemented('type guard');
       REPEAT S.Get(sym) UNTIL (sym = S.eot) OR (sym = S.rparen);
       Skip(S.rparen) (*TODO*)
     END
@@ -307,9 +307,9 @@ BEGIN
     y := SimpleExpression();
     x := Builder.DyadicOperator(relation, x, y)
   ELSIF sym = S.in THEN
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('operator IN')
   ELSIF sym = S.is THEN
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('operator IS')
   END
 RETURN x END Expression;
 
@@ -365,8 +365,12 @@ BEGIN
     statement := IfStatement()
   ELSIF Skipped(S.while) THEN
     statement := WhileStatement()
-  ELSIF (sym = S.case) OR (sym = S.repeat) OR (sym = S.for) THEN
-    Machine.Error(Errors.notImplemented)
+  ELSIF sym = S.case THEN
+    Machine.NotImplemented('case statement')
+  ELSIF sym = S.repeat THEN
+    Machine.NotImplemented('repeat statement')
+  ELSIF sym = S.for THEN
+    Machine.NotImplemented('for statement')
   END;
   IF statement = NIL THEN (* In case of error *)
     statement := Tree.NewNode(Tree.NTrap)
@@ -442,9 +446,14 @@ BEGIN
     ELSE
       type := obj.type
     END
-  ELSIF (sym = S.array) OR (sym = S.record) OR (sym = S.pointer) OR
-        (sym = S.procedure) THEN
-    Machine.Error(Errors.notImplemented)
+  ELSIF sym = S.array THEN
+    Machine.NotImplemented('type array')
+  ELSIF sym = S.record THEN
+    Machine.NotImplemented('type record')
+  ELSIF sym = S.pointer THEN
+    Machine.NotImplemented('type pointer')
+  ELSIF sym = S.procedure THEN
+    Machine.NotImplemented('procedure type')
   ELSE
     Machine.Error(Errors.noType)
   END
@@ -453,7 +462,7 @@ RETURN type END Type;
 (** TypeDeclaration = identdef "=" type. *)
 PROCEDURE TypeDeclaration;
 BEGIN
-  Machine.Error(Errors.notImplemented); (*TODO*)
+  Machine.NotImplemented('type declaration');
   (* Sync to VAR, BEGIN, RETURN or END *)
   REPEAT
     S.Get(sym)

@@ -38,18 +38,18 @@ BEGIN
       z.mode := Table.Const;
       z.address := n.constVal.intVal
     ELSE
-      Machine.Error(Errors.notImplemented)
+      Machine.NotImplemented('constant expression of this type')
     END
   ELSIF n.class = Tree.NVar THEN
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('variable expression')
   ELSIF n.class = Tree.NMonadic THEN
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('monadic expression')
   ELSIF n.class = Tree.NDyadic THEN
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('dyadic expression')
   ELSIF n.class = Tree.NProc THEN
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('procedure expression')
   ELSE
-    Machine.Error(Errors.notImplemented)
+    Machine.NotImplemented('this expression class')
   END
 END Expression;
 
@@ -68,7 +68,7 @@ BEGIN
         Expression(n.left, z);
         E.Assign(z, x)
       ELSE
-        Machine.Error(Errors.notImplemented)
+        Machine.NotImplemented('this statement type')
       END
     ELSIF n.class = Tree.NCall THEN
       Out.String('CALL');Out.Ln;
@@ -80,8 +80,8 @@ END Statement;
 PROCEDURE Traverse*(module: Tree.Node);
 BEGIN
   Generator.Init;
-  (*Statement(module)*)
-  Generator.DummyCode
+  Statement(module)
+  (*Generator.DummyCode*)
 END Traverse;
 
 END Traverser.

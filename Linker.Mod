@@ -567,7 +567,7 @@ PROCEDURE OpenOutputFile;
 BEGIN
   F := Files.New(fname);
   IF F = NIL THEN
-    Machine.GeneralError(Errors.outputFile)
+    Machine.Error(Errors.outputFile)
   ELSE
     Files.Set(r, F, 0)
   END
@@ -582,14 +582,14 @@ BEGIN
   Strings.Append(fname, s);
   err := Machine.Exec(s);
   IF err # 0 THEN
-    Machine.GeneralError(Errors.chmodFailed)
+    Machine.Error(Errors.chmodFailed)
   ELSE
     (* Sign *)
     s := 'codesign -s - -f --timestamp=none ';
     Strings.Append(fname, s);
     err := Machine.Exec(s);
     IF err # 0 THEN
-      Machine.GeneralError(Errors.signFailed)
+      Machine.Error(Errors.signFailed)
     END
   END
 END ChmodAndSign;

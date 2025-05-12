@@ -16,7 +16,7 @@ PROCEDURE OutOfMemory;
 BEGIN
   IF ~outOfMemory THEN
     outOfMemory := TRUE;
-    Machine.GeneralError(Errors.outOfMemory)
+    Machine.Error(Errors.outOfMemory)
   END
 END OutOfMemory;
 

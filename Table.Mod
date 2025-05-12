@@ -246,7 +246,7 @@ BEGIN
   ELSE
     objects := PseudoImport(name);
     IF objects = NIL THEN
-      Machine.Error(Errors.notImplemented)
+      Machine.NotImplemented('imports other than Out')
     ELSE
       module := ThisModule(alias, name, TRUE);
       module.dsc := objects

@@ -78,6 +78,7 @@ BEGIN
   ELSE
     module := Parser.Parse();
     IF ~Machine.hadErrors THEN
+      Machine.BackendPhase;
       IF Machine.debugFrontend THEN
         Out.String('--- Abstract Syntax Tree ---'); Out.Ln;
         Tree.Print(module, 0);
