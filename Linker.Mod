@@ -12,6 +12,8 @@ VAR
   F: Files.File;
   r: Files.Rider;
 
+  YY: INTEGER;
+
 PROCEDURE DD(n: INTEGER);
 BEGIN
   Out.Char(1BX); Out.String('[41m');
@@ -147,7 +149,7 @@ PROCEDURE Command1;
     (* Address *)
     QWord(1000000H * 100H + 4000H - 100);
     (* Size in bytes *)
-    QWord(12);
+    QWord(YY);
     (* Offset *)
     DWord(4000H - 100);
     (* Alignment = 2^2 = 4*)
@@ -171,11 +173,11 @@ PROCEDURE Command1;
     (* Segment Name *)
     String('__TEXT', 16);
     (* Address *)
-    QWord(1000000H * 100H + 4000H - 100 + 12);
+    QWord(1000000H * 100H + 4000H - 100 + YY);
     (* Size in bytes *)
-    QWord(88);
+    QWord(100 - YY);
     (* Offset *)
-    DWord(4000H - 100 + 12);
+    DWord(4000H - 100 + YY);
     (* Alignment = 2^2 = 4*)
     DWord(2);
     (* Relocations Offset *)
@@ -570,7 +572,7 @@ BEGIN
   (* Machine code *)
   Generator.Output(r);
   (* Unwind Info *)
-  Zeros(88);
+  Zeros(100 - YY);
 
   ChainedFixups;
   ExportsTrie;
@@ -613,6 +615,7 @@ END ChmodAndSign;
 PROCEDURE Link*(exeFname: ARRAY OF CHAR);
 BEGIN
   Strings.Copy(exeFname, fname);
+  YY := Generator.CodeLength();
   OpenOutputFile;
   IF ~Machine.hadErrors THEN
     Output;

@@ -80,8 +80,8 @@ END Statement;
 PROCEDURE Traverse*(module: Tree.Node);
 BEGIN
   Generator.Init;
-  Generator.DummyCode;
   (*Statement(module)*)
+  Generator.DummyCode
 END Traverse;
 
 END Traverser.

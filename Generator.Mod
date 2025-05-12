@@ -67,17 +67,40 @@ BEGIN
   DWord(ORD(x))
 END Set;
 
-PROCEDURE proc;
+(** Outputs string to the file (one byte per character). *)
+PROCEDURE String(s: ARRAY OF CHAR);
+VAR i: INTEGER;
 BEGIN
-END proc;
+  i := 0;
+  WHILE s[i] # 0X DO
+    Byte(ORD(s[i]));
+    INC(i)
+  END
+END String;
 
 PROCEDURE DummyCode*;
 BEGIN
+  Word(00020H); Word(0D280H);
+  Word(000E1H); Word(01000H);
+  Word(000E2H); Word(0D280H);
+  Word(00090H); Word(0D280H);
+
+  Word(00001H); Word(0D400H);
+  Word(00000H); Word(0D280H);
+  Word(00030H); Word(0D280H);
+  Word(00001H); Word(0D400H);
+
+  String('OBERON'); Byte(0AH); Byte(0)
+
+(*
   Word(017E0H); Word(0D280H);
   Word(00030H); Word(0D280H);
   Word(00001H); Word(0D400H);
-  (*TODO*)
+  *)
 END DummyCode;
+
+PROCEDURE CodeLength*(): INTEGER;
+RETURN pc END CodeLength;
 
 PROCEDURE Output*(VAR r: Files.Rider);
 BEGIN
