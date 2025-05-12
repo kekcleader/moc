@@ -2,7 +2,7 @@ MODULE Generator;
 IMPORT Out, Strings, Files, Machine, Errors := MocErrors;
 
 CONST
-  maxCodeLen = 40960;
+  maxCodeLen* = 2000H;
 
 TYPE
 

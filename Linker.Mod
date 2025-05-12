@@ -3,6 +3,7 @@ IMPORT Out, Strings, Files, Machine, Errors := MocErrors, E := Emitter,
   Generator, Table, Tree, SYSTEM;
 
 CONST
+  codeSpace = Generator.maxCodeLen; (** Maximum code length *)
 
 TYPE
   HUGEINT = SYSTEM.INT64;
@@ -12,7 +13,7 @@ VAR
   F: Files.File;
   r: Files.Rider;
 
-  YY: INTEGER;
+  codeLen: INTEGER;
 
 PROCEDURE DD(n: INTEGER);
 BEGIN
@@ -147,11 +148,11 @@ PROCEDURE Command1;
     (* Segment Name *)
     String('__TEXT', 16);
     (* Address *)
-    QWord(1000000H * 100H + 4000H - 100);
+    QWord(1000000H * 100H + 4000H - codeSpace);
     (* Size in bytes *)
-    QWord(YY);
+    QWord(codeLen);
     (* Offset *)
-    DWord(4000H - 100);
+    DWord(4000H - codeSpace);
     (* Alignment = 2^2 = 4*)
     DWord(2);
     (* Relocations Offset *)
@@ -173,11 +174,11 @@ PROCEDURE Command1;
     (* Segment Name *)
     String('__TEXT', 16);
     (* Address *)
-    QWord(1000000H * 100H + 4000H - 100 + YY);
+    QWord(1000000H * 100H + 4000H - codeSpace + codeLen);
     (* Size in bytes *)
-    QWord(100 - YY);
+    QWord(codeSpace - codeLen);
     (* Offset *)
-    DWord(4000H - 100 + YY);
+    DWord(4000H - codeSpace + codeLen);
     (* Alignment = 2^2 = 4*)
     DWord(2);
     (* Relocations Offset *)
@@ -403,7 +404,7 @@ BEGIN
   (* Command Size in bytes *)
   DWord(24);
   (* Entry Offset *)
-  QWord(4000H - 100);
+  QWord(4000H - codeSpace);
   (* Initial Stack Size, may be 0 *)
   QWord(0)
 END Command11;
@@ -450,18 +451,6 @@ BEGIN
   DWord(0)
 END Command14;
 
-PROCEDURE Command15;
-BEGIN
-  (* Command LC_CODE_SIGNATURE *)
-  DWord(1DH);
-  (* Command Size in bytes *)
-  DWord(16);
-  (* Data Offset *)
-  DWord(4000H + 112 + 64);
-  (* Data Size *)
-  DWord(280)
-END Command15;
-
 (** Outputs Mach-O commands to the file. *)
 PROCEDURE Commands;
 BEGIN
@@ -479,8 +468,7 @@ BEGIN
   Command11;
   Command12;
   Command13;
-  Command14;
-  (*Command15*)
+  Command14
 END Commands;
 
 (** Outputs 56 bytes to the file. *)
@@ -551,34 +539,28 @@ BEGIN
   DWord(2);   DWord(10010FH); DWord(0);     DWord(1);
   DWord(16H); DWord(10FH);    DWord(3F9CH); DWord(1);
 
-  (* Names String *)
+  (* Name Strings *)
   Byte(20H); Byte(0);
   String('__mh_execute_header', 0); Byte(0);
   String('_start', 0); DWord(0)
 END SymbolTable;
-
-PROCEDURE CodeSignature;
-BEGIN
-  Zeros(280)
-END CodeSignature;
 
 PROCEDURE Output;
 BEGIN
   Header;
   Commands;
 
-  (* Zero-out until position 4000H - 100 *)
-  Zeros(4000H - 100 - Files.Pos(r));
+  (* Zero-out until position 4000H - codeSpace *)
+  Zeros(4000H - codeSpace - Files.Pos(r));
   (* Machine code *)
   Generator.Output(r);
   (* Unwind Info *)
-  Zeros(100 - YY);
+  Zeros(codeSpace - codeLen);
 
   ChainedFixups;
   ExportsTrie;
   FunctionStarts;
-  SymbolTable;
-  (*CodeSignature*)
+  SymbolTable
 END Output;
 
 PROCEDURE OpenOutputFile;
@@ -615,7 +597,7 @@ END ChmodAndSign;
 PROCEDURE Link*(exeFname: ARRAY OF CHAR);
 BEGIN
   Strings.Copy(exeFname, fname);
-  YY := Generator.CodeLength();
+  codeLen := Generator.CodeLength();
   OpenOutputFile;
   IF ~Machine.hadErrors THEN
     Output;
