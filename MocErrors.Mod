@@ -40,6 +40,8 @@ CONST
   (** General errors **)
   outputFile*        = 101;
   outOfMemory*       = 102;
+  chmodFailed*       = 103;
+  signFailed*        = 104;
 
   (** Lexical symbols **)
   null = 0; times = 1; rdiv = 2; div = 3; mod = 4;
@@ -172,6 +174,8 @@ BEGIN
     s := 'ARRAY, RECORD, POINTER, PROCEDURE or identifier expected'
   ELSIF errno = outputFile   THEN s := 'Could not open output file'
   ELSIF errno = outOfMemory  THEN s := 'Out of code memory'
+  ELSIF errno = chmodFailed  THEN s := 'ChMod command failed'
+  ELSIF errno = signFailed   THEN s := 'CodeSign command failed'
   ELSE
     s := '#ERR'; Int.Append(errno, s)
   END

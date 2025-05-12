@@ -1,5 +1,5 @@
 MODULE Machine;
-IMPORT Out, Errors := MocErrors, Files;
+IMPORT Out, Errors := MocErrors, Files, Utf8, Platform, SYSTEM;
 
 CONST
   maxInt* = 2147483647; (** Maximum integer value, 32-bit *)
@@ -12,6 +12,8 @@ CONST
   compilerName* = 'moc';
 
 TYPE
+  SHORTCHAR = SYSTEM.CHAR8;
+
   Pos* = RECORD
     line*, col*: INTEGER
   END;
@@ -122,6 +124,12 @@ BEGIN
   errorPos.line := -1;
   hadErrors := F = NIL
 RETURN ~hadErrors END OpenSourceFile;
+
+PROCEDURE Exec*(command: ARRAY OF CHAR): INTEGER;
+VAR z: ARRAY 4096 OF SHORTCHAR;
+BEGIN
+  Utf8.Encode(command, z);
+RETURN  Platform.System(z) END Exec;
 
 PROCEDURE SetDebug*(value: BOOLEAN);
 BEGIN

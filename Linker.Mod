@@ -589,6 +589,27 @@ BEGIN
   END
 END OpenOutputFile;
 
+PROCEDURE ChmodAndSign;
+VAR s: ARRAY 1024 OF CHAR;
+  err: INTEGER;
+BEGIN
+  (* Chmod *)
+  s := 'chmod +x ';
+  Strings.Append(fname, s);
+  err := Machine.Exec(s);
+  IF err # 0 THEN
+    Machine.GeneralError(Errors.chmodFailed)
+  ELSE
+    (* Sign *)
+    s := 'codesign -s - -f --timestamp=none ';
+    Strings.Append(fname, s);
+    err := Machine.Exec(s);
+    IF err # 0 THEN
+      Machine.GeneralError(Errors.signFailed)
+    END
+  END
+END ChmodAndSign;
+
 PROCEDURE Link*(exeFname: ARRAY OF CHAR);
 BEGIN
   Strings.Copy(exeFname, fname);
@@ -598,7 +619,8 @@ BEGIN
     IF Machine.hadErrors THEN
       Files.Close(F)
     ELSE
-      Files.Register(F)
+      Files.Register(F);
+      ChmodAndSign
     END
   END
 END Link;
