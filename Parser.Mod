@@ -371,9 +371,6 @@ BEGIN
     Machine.NotImplemented('repeat statement')
   ELSIF sym = S.for THEN
     Machine.NotImplemented('for statement')
-  END;
-  IF statement = NIL THEN (* In case of error *)
-    statement := Tree.NewNode(Tree.NTrap)
   END
 RETURN statement END Statement;
 

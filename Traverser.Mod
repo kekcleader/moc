@@ -71,7 +71,7 @@ BEGIN
         Machine.NotImplemented('this statement type')
       END
     ELSIF n.class = Tree.NCall THEN
-      Out.String('CALL');Out.Ln;
+      Machine.NotImplemented('procedure call')
     END;
     n := n.link
   END

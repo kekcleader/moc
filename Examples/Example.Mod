@@ -8,6 +8,9 @@ VAR
   ch: CHAR;
   a, b, c: BOOLEAN;
 BEGIN
+  x := 37;
+  y := 775
+(*
   x := x * x * x + x;
   y := 11 + trees * apple;
   x := (-x + y * 2 + x * x) + (y - x);
@@ -17,5 +20,5 @@ BEGIN
   Out.Int(y, 4);
   Out.Ln;
   Out.Int(y + x, 10);
-  Out.Ln
+  Out.Ln*)
 END Example.
