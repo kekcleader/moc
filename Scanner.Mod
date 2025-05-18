@@ -32,7 +32,7 @@ TYPE
 
 VAR
   (** Results of Get **)
-  identVal*: Ident; (* FIXME Rename to name *)
+  name*: Ident;
   intVal*: INTEGER;
   realVal*: REAL;
   strVal*: StrVal;
@@ -76,57 +76,57 @@ PROCEDURE IsAlphaNum(): BOOLEAN;
 RETURN IsAlpha() OR IsDigit()
 END IsAlphaNum;
 
-(** Examines identVal and returns one of keyword lexical symbol constants,
-    or ident if identVal is not a keyword. Uses the passed in actual length
-    of identVal for speed. *)
+(** Examines name and returns one of keyword lexical symbol constants,
+    or ident if name is not a keyword. Uses the passed in actual length
+    of name for speed. *)
 PROCEDURE IdentifyKeyword(len: INTEGER): INTEGER;
 VAR sym: INTEGER;
 BEGIN
   sym := ident;
   IF len = 2 THEN
-    IF    identVal = "OR" THEN sym := or
-    ELSIF identVal = "IN" THEN sym := in
-    ELSIF identVal = "IS" THEN sym := is
-    ELSIF identVal = "IF" THEN sym := if
-    ELSIF identVal = "OF" THEN sym := of
-    ELSIF identVal = "DO" THEN sym := do
-    ELSIF identVal = "TO" THEN sym := to
-    ELSIF identVal = "BY" THEN sym := by
+    IF    name = "OR" THEN sym := or
+    ELSIF name = "IN" THEN sym := in
+    ELSIF name = "IS" THEN sym := is
+    ELSIF name = "IF" THEN sym := if
+    ELSIF name = "OF" THEN sym := of
+    ELSIF name = "DO" THEN sym := do
+    ELSIF name = "TO" THEN sym := to
+    ELSIF name = "BY" THEN sym := by
     END
   ELSIF len = 3 THEN
-    IF    identVal = "END" THEN sym := end
-    ELSIF identVal = "VAR" THEN sym := var
-    ELSIF identVal = "NIL" THEN sym := nil
-    ELSIF identVal = "DIV" THEN sym := div
-    ELSIF identVal = "MOD" THEN sym := mod
-    ELSIF identVal = "FOR" THEN sym := for
+    IF    name = "END" THEN sym := end
+    ELSIF name = "VAR" THEN sym := var
+    ELSIF name = "NIL" THEN sym := nil
+    ELSIF name = "DIV" THEN sym := div
+    ELSIF name = "MOD" THEN sym := mod
+    ELSIF name = "FOR" THEN sym := for
     END
   ELSIF len = 4 THEN
-    IF    identVal = "THEN" THEN sym := then
-    ELSIF identVal = "ELSE" THEN sym := else
-    ELSIF identVal = "TRUE" THEN sym := true
-    ELSIF identVal = "TYPE" THEN sym := type
-    ELSIF identVal = "REAL" THEN sym := real
-    ELSIF identVal = "CASE" THEN sym := case
+    IF    name = "THEN" THEN sym := then
+    ELSIF name = "ELSE" THEN sym := else
+    ELSIF name = "TRUE" THEN sym := true
+    ELSIF name = "TYPE" THEN sym := type
+    ELSIF name = "REAL" THEN sym := real
+    ELSIF name = "CASE" THEN sym := case
     END
   ELSIF len = 5 THEN
-    IF    identVal = "ELSIF" THEN sym := elsif
-    ELSIF identVal = "FALSE" THEN sym := false
-    ELSIF identVal = "CONST" THEN sym := const
-    ELSIF identVal = "WHILE" THEN sym := while
-    ELSIF identVal = "ARRAY" THEN sym := array
-    ELSIF identVal = "BEGIN" THEN sym := begin
-    ELSIF identVal = "UNTIL" THEN sym := until
+    IF    name = "ELSIF" THEN sym := elsif
+    ELSIF name = "FALSE" THEN sym := false
+    ELSIF name = "CONST" THEN sym := const
+    ELSIF name = "WHILE" THEN sym := while
+    ELSIF name = "ARRAY" THEN sym := array
+    ELSIF name = "BEGIN" THEN sym := begin
+    ELSIF name = "UNTIL" THEN sym := until
     END
   ELSIF len = 6 THEN
-    IF    identVal = "RETURN" THEN sym := return
-    ELSIF identVal = "RECORD" THEN sym := record
-    ELSIF identVal = "REPEAT" THEN sym := repeat
-    ELSIF identVal = "IMPORT" THEN sym := import
-    ELSIF identVal = "MODULE" THEN sym := module
+    IF    name = "RETURN" THEN sym := return
+    ELSIF name = "RECORD" THEN sym := record
+    ELSIF name = "REPEAT" THEN sym := repeat
+    ELSIF name = "IMPORT" THEN sym := import
+    ELSIF name = "MODULE" THEN sym := module
     END
-  ELSIF (len = 7) & (identVal = "POINTER")   THEN sym := pointer
-  ELSIF (len = 9) & (identVal = "PROCEDURE") THEN sym := procedure
+  ELSIF (len = 7) & (name = "POINTER")   THEN sym := pointer
+  ELSIF (len = 9) & (name = "PROCEDURE") THEN sym := procedure
   END
 RETURN sym END IdentifyKeyword;
 
@@ -318,23 +318,23 @@ BEGIN
     IF ch = 0X THEN
       sym := eot
     ELSIF IsAlpha() THEN (* Also '_' *)
-      identVal[0] := ch;
+      name[0] := ch;
       Machine.Read(ch);
       ok := TRUE;
       i := 1;
       WHILE IsAlphaNum() DO
-        IF i = LEN(identVal) - 1 THEN
+        IF i = LEN(name) - 1 THEN
           ok := FALSE
         ELSE
-          identVal[i] := ch;
+          name[i] := ch;
           INC(i)
         END;
         Machine.Read(ch)
       END;
-      identVal[i] := 0X;
+      name[i] := 0X;
       IF ~ok THEN
         Machine.Error(Errors.longIdent);
-        identVal := ''
+        name := ''
       END;
       sym := IdentifyKeyword(i)
     ELSIF IsDigit() THEN

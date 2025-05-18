@@ -36,7 +36,7 @@ BEGIN
       Out.Real(S.realVal, 0)
     ELSIF sym = S.ident THEN
       Out.String('ident ');
-      Out.String(S.identVal)
+      Out.String(S.name)
     ELSE
       Errors.PrintSymbol(sym)
     END;
@@ -82,7 +82,7 @@ RETURN x END StandardProcedureCall;
 PROCEDURE Qualident(): Table.Object;
 VAR object: Table.Object;
 BEGIN
-  object := Table.ThisObject(S.identVal);
+  object := Table.ThisObject(S.name);
   S.Get(sym); (* ident *)
   IF object = NIL THEN
     Machine.Error(Errors.undefinedIdent);
@@ -93,7 +93,7 @@ BEGIN
     IF ~Check(S.ident) THEN
       object := dummy
     ELSE
-      object := Table.ThisImport(object, S.identVal);
+      object := Table.ThisImport(object, S.name);
       S.Get(sym); (* ident *)
       IF object = NIL THEN
         Machine.Error(Errors.undefinedIdent);
@@ -410,7 +410,7 @@ PROCEDURE ConstDeclaration;
 VAR expr: Tree.Node;
   obj: Table.Object;
 BEGIN
-  obj := Table.NewObject(S.identVal, Table.Const);
+  obj := Table.NewObject(S.name, Table.Const);
   S.Get(sym); (* ident *)
   IF Skipped(S.eql) THEN
     expr := ConstExpression();
@@ -471,11 +471,11 @@ END TypeDeclaration;
 PROCEDURE IdentList(class: INTEGER): Table.Object;
 VAR first, obj: Table.Object;
 BEGIN
-  first := Table.NewObject(S.identVal, class);
+  first := Table.NewObject(S.name, class);
   S.Get(sym); (* ident *)
   WHILE sym = S.comma DO
     S.Get(sym); (* comma *)
-    obj := Table.NewObject(S.identVal, class);
+    obj := Table.NewObject(S.name, class);
     S.Get(sym) (* ident *)
   END
 RETURN first END IdentList;
@@ -545,10 +545,10 @@ PROCEDURE Import;
 VAR name: Ident;
 BEGIN
   IF Check(S.ident) THEN
-    Strings.Copy(S.identVal, name);
+    Strings.Copy(S.name, name);
     S.Get(sym);
     IF Skipped(S.becomes) THEN
-      Table.Import(name, S.identVal, modName);
+      Table.Import(name, S.name, modName);
       S.Get(sym)
     ELSE
       Table.Import(name, name, modName)
@@ -566,7 +566,7 @@ VAR module: Tree.Node;
 BEGIN
   Skip(S.module);
   IF Check(S.ident) THEN
-    Strings.Copy(S.identVal, modName);
+    Strings.Copy(S.name, modName);
     S.Get(sym); (* ident *)
 
     (* IMPORT *)
@@ -588,7 +588,7 @@ BEGIN
     module := Builder.Enter(procedures, statementSequence, NIL);
     Skip(S.end);
     IF Check(S.ident) THEN
-      IF S.identVal # modName THEN
+      IF S.name # modName THEN
         Machine.Error(Errors.modNameMismatch)
       ELSE
         S.Get(sym); (* ident *)
