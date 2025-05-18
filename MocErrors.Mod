@@ -59,11 +59,6 @@ CONST
   array = 60; record = 61; pointer = 62; const = 63; type = 64;
   var = 65; procedure = 66; begin = 67; import = 68; module = 69; eot = 70;
 
-TYPE
-  Params* = RECORD
-    
-  END;
-
 PROCEDURE PrintSymbol*(sym: INTEGER);
 BEGIN
   IF    sym = string    THEN Out.String('String')

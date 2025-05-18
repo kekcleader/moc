@@ -1,10 +1,6 @@
 MODULE Traverser;
 IMPORT Out, Machine, Errors := MocErrors, E := Emitter, Generator, Table, Tree;
 
-CONST
-
-TYPE
-
 PROCEDURE DD(n: INTEGER);
 BEGIN
   Out.Char(1BX); Out.String('[41m');

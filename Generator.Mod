@@ -4,8 +4,6 @@ IMPORT Out, Strings, Files, Machine, Errors := MocErrors;
 CONST
   maxCodeLen* = 2000H;
 
-TYPE
-
 VAR
   code: ARRAY maxCodeLen OF BYTE;
   pc: INTEGER;

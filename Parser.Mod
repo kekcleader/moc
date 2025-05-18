@@ -2,8 +2,6 @@ MODULE Parser;
 IMPORT Out, Strings, Table, Tree, Machine, S := Scanner, Builder,
   Errors := MocErrors, Kernel;
 
-CONST
-
 TYPE
   Ident = S.Ident;
 
