@@ -60,6 +60,7 @@ TYPE
     dsc*: Object; (** Descendant object *)
     type*: Type;
     constVal*: ConstVal;
+    address*: INTEGER; (** For backend *)
     next*: Object
   END;
 
@@ -283,50 +284,53 @@ END PrintConstVal;
 
 PROCEDURE PrintType*(type: Type);
 BEGIN
-  IF type # NIL THEN
-    IF    type.form = Byte    THEN Out.String('Byte')
-    ELSIF type.form = Bool    THEN Out.String('Bool')
-    ELSIF type.form = Char    THEN Out.String('Char')
-    ELSIF type.form = Int     THEN Out.String('Int')
-    ELSIF type.form = Real    THEN Out.String('Real')
-    ELSIF type.form = Set     THEN Out.String('Set')
-    ELSIF type.form = Pointer THEN Out.String('Pointer')
-    ELSIF type.form = NilType  THEN Out.String('NilType')
-    ELSIF type.form = NoType   THEN Out.String('NoType')
-    ELSIF type.form = Proc    THEN Out.String('Proc')
-    ELSIF type.form = String  THEN Out.String('String')
-    ELSIF type.form = Array   THEN Out.String('Array')
-    ELSIF type.form = Record  THEN Out.String('Record')
-    ELSE Out.String('UNKNOWN')
-    END
+  IF    type = NIL          THEN Out.String('NIL')
+  ELSIF type.form = Byte    THEN Out.String('Byte')
+  ELSIF type.form = Bool    THEN Out.String('Bool')
+  ELSIF type.form = Char    THEN Out.String('Char')
+  ELSIF type.form = Int     THEN Out.String('Int')
+  ELSIF type.form = Real    THEN Out.String('Real')
+  ELSIF type.form = Set     THEN Out.String('Set')
+  ELSIF type.form = Pointer THEN Out.String('Pointer')
+  ELSIF type.form = NilType THEN Out.String('NilType')
+  ELSIF type.form = NoType  THEN Out.String('NoType')
+  ELSIF type.form = Proc    THEN Out.String('Proc')
+  ELSIF type.form = String  THEN Out.String('String')
+  ELSIF type.form = Array   THEN Out.String('Array')
+  ELSIF type.form = Record  THEN Out.String('Record')
+  ELSE Out.String('UNKNOWN')
   END
 END PrintType;
 
 PROCEDURE PrintObject*(object: Object; indent: INTEGER);
 BEGIN
   Indent(indent);
-  Out.Char("'"); Out.String(object.name); Out.String("' ");
-  IF object.class = Const THEN
-    Out.String('Const ');
-    PrintConstVal(object.constVal, object.type)
-  ELSIF object.class = Var THEN
-    Out.String('Var')
-  ELSIF object.class = VarPar THEN
-    Out.String('VarPar')
-  ELSIF object.class = Typ THEN
-    Out.String('Typ')
-  ELSIF object.class = SProc THEN
-    Out.String('SProc')
-  ELSIF object.class = SFunc THEN
-    Out.String('SFunc')
-  ELSIF object.class = Mod THEN
-    Out.String('Mod')
+  IF object = NIL THEN
+    Out.String('NIL')
   ELSE
-    Out.String('class #'); Out.Int(object.class, 0)
-  END;
-  IF object.type # NIL THEN
-    Out.Char(' ');
-    PrintType(object.type)
+    Out.Char("'"); Out.String(object.name); Out.String("' ");
+    IF object.class = Const THEN
+      Out.String('Const ');
+      PrintConstVal(object.constVal, object.type)
+    ELSIF object.class = Var THEN
+      Out.String('Var')
+    ELSIF object.class = VarPar THEN
+      Out.String('VarPar')
+    ELSIF object.class = Typ THEN
+      Out.String('Typ')
+    ELSIF object.class = SProc THEN
+      Out.String('SProc')
+    ELSIF object.class = SFunc THEN
+      Out.String('SFunc')
+    ELSIF object.class = Mod THEN
+      Out.String('Mod')
+    ELSE
+      Out.String('class #'); Out.Int(object.class, 0)
+    END;
+    IF object.type # NIL THEN
+      Out.Char(' ');
+      PrintType(object.type)
+    END
   END
 END PrintObject;
 
@@ -372,7 +376,7 @@ BEGIN
   intType  := NewType(Int,     4);
   realType := NewType(Real,    4);
   setType  := NewType(Set,     4);
-  nilType  := NewType(NilType, 4);
+  nilType  := NewType(NilType, 8);
   noType   := NewType(NoType,  4);
   strType  := NewType(String,  8);
 

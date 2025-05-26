@@ -4,6 +4,7 @@ IMPORT Out, Strings, Files, Machine, Errors := MocErrors, E := Emitter,
 
 CONST
   codeSpace = Generator.maxCodeLen; (** Maximum code length *)
+  dataSpace = Generator.maxDataLen; (** Maximum data length *)
 
 TYPE
   HUGEINT = SYSTEM.INT64;
@@ -14,6 +15,7 @@ VAR
   r: Files.Rider;
 
   codeLen: INTEGER;
+  dataLen: INTEGER;
 
 PROCEDURE DD(n: INTEGER);
 BEGIN
@@ -104,9 +106,9 @@ BEGIN
   (* File Type = MH_EXECUTE *)
   DWord(2);
   (* Number of Load Commands *)
-  DWord(15);
+  DWord(16);
   (* Size of Load Commands in bytes *)
-  DWord(744-16);
+  DWord(744-16+152); (* 152 is data segment command *)
   (* Flags = {NOUNDEFS, DYLDLINK, TWOLEVEL, PIE} *)
   Set({0, 2, 7, 21});
   (* Reserved = 0 *)
@@ -153,7 +155,7 @@ PROCEDURE Command1;
     QWord(codeLen);
     (* Offset *)
     DWord(4000H - codeSpace);
-    (* Alignment = 2^2 = 4*)
+    (* Alignment = 2^2 = 4 *)
     DWord(2);
     (* Relocations Offset *)
     DWord(0);
@@ -222,6 +224,61 @@ BEGIN (* Command1 *)
 END Command1;
 
 PROCEDURE Command2;
+
+  PROCEDURE Section0;
+  BEGIN
+    (* Section Name *)
+    String('__data', 16);
+    (* Segment Name *)
+    String('__DATA', 16);
+    (* Address *)
+    QWord(100004H * 1000H);
+    (* Size in bytes *)
+    QWord(dataLen);
+    (* Offset *)
+    DWord(4000H);
+    (* Alignment = 2^0 = 1 *)
+    DWord(0);
+    (* Relocations Offset *)
+    DWord(0);
+    (* Number of Relocations *)
+    DWord(0);
+    (* Flags = S_REGULAR *)
+    Set({});
+    (* Reserved *)
+    DWord(0);
+    DWord(0);
+    DWord(0)
+  END Section0;
+
+BEGIN (* Command2 *)
+  (* Command LC_SEGMENT_64 *)
+  DWord(19H);
+  (* Command Size in bytes *)
+  DWord(152);
+  (* Segment Name *)
+  String('__DATA', 16);
+  (* VM Address *)
+  QWord(100004H * 1000H); (* 4 GB + D, where D = 16 KB *)
+  (* VM Size *)
+  QWord(4000H); (* D = 16 KB *)
+  (* File Offset *)
+  QWord(4000H); (* 16 KB *)
+  (* File Size *)
+  QWord(4000H); (* D = 16 KB *)
+  (* Maximum VM Protection = VM_PROT_READ, VM_PROT_WRITE *)
+  Set({0, 1});
+  (* Initial VM Protection = VM_PROT_READ, VM_PROT_WRITE *)
+  Set({0, 1});
+  (* Number of Sections *)
+  DWord(1);
+  (* Flags *)
+  Set({});
+  (* Sections *)
+  Section0
+END Command2;
+
+PROCEDURE Command3;
 BEGIN
   (* Command LC_SEGMENT_64 *)
   DWord(19H);
@@ -230,11 +287,11 @@ BEGIN
   (* Segment Name *)
   String('__LINKEDIT', 16);
   (* VM Address *)
-  QWord(1000000H * 100H + 4000H);
+  QWord(100000H * 1000H + 8000H);
   (* VM Size *)
   QWord(4000H); (* 16 KB *)
   (* File Offset *)
-  QWord(4000H);
+  QWord(8000H); (* 32 KB *)
   (* File Size *)
   QWord(176);
   (* Maximum VM Protection *)
@@ -245,9 +302,9 @@ BEGIN
   DWord(0);
   (* Flags *)
   Set({})
-END Command2;
+END Command3;
 
-PROCEDURE Command3;
+PROCEDURE Command4;
 BEGIN
   (* Command LC_DYLD_CHAINED_FIXUPS *)
   (*DWord(34H);*) (* FIXME <----------------- 34 00 00 80, what is 8 for? *)
@@ -255,12 +312,12 @@ BEGIN
   (* Command Size in bytes *)
   DWord(16);
   (* Data Offset *)
-  DWord(4000H);
+  DWord(8000H);
   (* Data Size *)
   DWord(56)
-END Command3;
+END Command4;
 
-PROCEDURE Command4;
+PROCEDURE Command5;
 BEGIN
   (* Command LC_DYLD_EXPORTS_TRIE *)
   (*DWord(33H);*) (* FIXME <----------------- what is 8 for? *)
@@ -268,28 +325,28 @@ BEGIN
   (* Command Size in bytes *)
   DWord(16);
   (* Data Offset *)
-  DWord(4000H + 56);
+  DWord(8000H + 56);
   (* Data Size *)
   DWord(48)
-END Command4;
+END Command5;
 
-PROCEDURE Command5;
+PROCEDURE Command6;
 BEGIN
   (* Command LC_SYMTAB *)
   DWord(2);
   (* Command Size in bytes *)
   DWord(24);
   (* Symbol Table Offset, 8 bytes contain the procedure starts table, Seg. 13 *)
-  DWord(4000H + 56 + 48 + 8); (* 4000H + 112 *)
+  DWord(8000H + 56 + 48 + 8); (* 8000H + 112 *)
   (* Number of Symbols *)
   DWord(2);
   (* String Table Offset *)
-  DWord(4000H + 56 + 48 + 8 + 32); (* 4000H + 144 *)
+  DWord(8000H + 56 + 48 + 8 + 32); (* 8000H + 144 *)
   (* String Table Size *)
   DWord(32)
-END Command5;
+END Command6;
 
-PROCEDURE Command6;
+PROCEDURE Command7;
 BEGIN
   (* Command LC_DYSYMTAB *)
   DWord(0BH);
@@ -340,9 +397,9 @@ BEGIN
   DWord(0);
   (* LocReloc Table Entries *)
   DWord(0)
-END Command6;
+END Command7;
 
-PROCEDURE Command7;
+PROCEDURE Command8;
 BEGIN
   (* Command LC_LOAD_DYLINKER *)
   DWord(0EH);
@@ -352,9 +409,9 @@ BEGIN
   DWord(12);
   (* Name *)
   String('/usr/lib/dyld', 20)
-END Command7;
+END Command8;
 
-PROCEDURE Command8;
+PROCEDURE Command9;
 BEGIN
   (* Command LC_UUID *)
   DWord(1BH);
@@ -363,9 +420,9 @@ BEGIN
   (* UUID, 16 bytes, TODO generate random *)
   Word(09A45H); Word(0ADB9H); Word(02E6CH); Word(09B32H);
   Word(0E48AH); Word(06EECH); Word(07BCDH); Word(0EC6DH)
-END Command8;
+END Command9;
 
-PROCEDURE Command9;
+PROCEDURE Command10;
 BEGIN
   (* Command LC_BUILD_VERSION *)
   DWord(32H);
@@ -385,9 +442,9 @@ BEGIN
   DWord(3);
   (* Tool Version = 1115.7.3 *)
   DWord(45B0703H)
-END Command9;
+END Command10;
 
-PROCEDURE Command10;
+PROCEDURE Command11;
 BEGIN
   (* Command LC_SOURCE_VERSION *)
   DWord(2AH);
@@ -395,9 +452,9 @@ BEGIN
   DWord(16);
   (* Version = 0.0 *)
   QWord(0)
-END Command10;
+END Command11;
 
-PROCEDURE Command11;
+PROCEDURE Command12;
 BEGIN
   (* Command LC_MAIN *)
   Byte(28H); Byte(0); Byte(0); Byte(80H);
@@ -407,9 +464,9 @@ BEGIN
   QWord(4000H - codeSpace);
   (* Initial Stack Size, may be 0 *)
   QWord(0)
-END Command11;
+END Command12;
 
-PROCEDURE Command12;
+PROCEDURE Command13;
 BEGIN
   (* Command LC_LOAD_DYLIB *)
   DWord(0CH);
@@ -425,31 +482,31 @@ BEGIN
   DWord(10000H);
   (* Name *)
   String('/usr/lib/libSystem.B.dylib', 32)
-END Command12;
+END Command13;
 
-PROCEDURE Command13;
+PROCEDURE Command14;
 BEGIN
   (* Command LC_FUNCTION_STARTS *)
   DWord(26H);
   (* Command Size in bytes *)
   DWord(16);
   (* Data Offset *)
-  DWord(4000H + 104);
+  DWord(8000H + 104);
   (* Data Size *)
   DWord(8)
-END Command13;
+END Command14;
 
-PROCEDURE Command14;
+PROCEDURE Command15;
 BEGIN
   (* Command LC_DATA_IN_CODE *)
   DWord(29H);
   (* Command Size in bytes *)
   DWord(16);
   (* Data Offset *)
-  DWord(4000H + 112);
+  DWord(8000H + 112);
   (* Data Size *)
   DWord(0)
-END Command14;
+END Command15;
 
 (** Outputs Mach-O commands to the file. *)
 PROCEDURE Commands;
@@ -468,7 +525,8 @@ BEGIN
   Command11;
   Command12;
   Command13;
-  Command14
+  Command14;
+  Command15
 END Commands;
 
 (** Outputs 56 bytes to the file. *)
@@ -552,10 +610,16 @@ BEGIN
 
   (* Zero-out until position 4000H - codeSpace *)
   Zeros(4000H - codeSpace - Files.Pos(r));
+
   (* Machine code *)
-  Generator.Output(r);
+  Generator.OutputCode(r);
   (* Unwind Info *)
   Zeros(codeSpace - codeLen);
+
+  (* Data (global variables) *)
+  Generator.OutputData(r);
+  Zeros(4000H - dataLen - 1);
+  Byte(0AH); (* For Out.Ln *)
 
   ChainedFixups;
   ExportsTrie;
@@ -598,6 +662,7 @@ PROCEDURE Link*(exeFname: ARRAY OF CHAR);
 BEGIN
   Strings.Copy(exeFname, fname);
   codeLen := Generator.CodeLength();
+  dataLen := Generator.DataLength();
   OpenOutputFile;
   IF ~Machine.hadErrors THEN
     Output;

@@ -75,7 +75,7 @@ BEGIN
       Out.Char(' ');
       Errors.PrintSymbol(node.subclass)
     END;
-    IF node.object # NIL THEN
+    IF (node.object # NIL) OR (node.class = NEnter) THEN
       Out.String(' (Object: ');
       T.PrintObject(node.object, 0);
       Out.Char(')')

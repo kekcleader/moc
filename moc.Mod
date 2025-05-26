@@ -86,9 +86,12 @@ BEGIN
         Table.Print(Table.topScope, 0)
       END;
 
-      Traverser.Traverse(module);
+      Traverser.SetAddressesAndSizes(Table.topScope);
       IF ~Machine.hadErrors THEN
-        Linker.Link(exeFname)
+        Traverser.Traverse(module);
+        IF ~Machine.hadErrors THEN
+          Linker.Link(exeFname)
+        END
       END
     END
   END

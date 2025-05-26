@@ -1,24 +1,13 @@
 MODULE Example;
 IMPORT Out;
 CONST
-  trees = 5;
-  apple = 2 + 4 * trees - 1;
+  N = 5;
+  M = N * 10 - 14;
 VAR
-  x, y: INTEGER;
-  ch: CHAR;
-  a, b, c: BOOLEAN;
+  a, b: INTEGER;
 BEGIN
-  x := 37;
-  y := 775
-(*
-  x := x * x * x + x;
-  y := 11 + trees * apple;
-  x := (-x + y * 2 + x * x) + (y - x);
-  x := x - y;
-  ch := 51X;
-  Out.Int(x, 5);
-  Out.Int(y, 4);
-  Out.Ln;
-  Out.Int(y + x, 10);
-  Out.Ln*)
+  a := M + 1;
+  b := 4096 + 65;
+  Out.Int(b, 0);
+  Out.Ln
 END Example.
