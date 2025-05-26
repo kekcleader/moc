@@ -46,7 +46,7 @@ BEGIN
   ELSIF (pos.line # errorPos.line) OR (pos.col # errorPos.col) THEN
     Out.String(fname); Out.Char(':');
     Out.Int(pos.line, 0); Out.Char(':');
-    Out.Int(pos.col, 0); Out.String(': ошибка: '); (*FIXME*)
+    Out.Int(pos.col, 0); Out.String(': error: ');
     errorPos := pos
   ELSE
     ok := FALSE
