@@ -126,7 +126,7 @@ BEGIN
   DWord(n)
 END MovHImm;
 
-(** MOV w{r}, #{imm} *)
+(** ADRP w{r}, #{imm} *)
 PROCEDURE Adrp*(r, imm: INTEGER);
 VAR n, immlo, immhi: INTEGER;
 BEGIN
