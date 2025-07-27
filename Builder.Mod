@@ -106,6 +106,7 @@ RETURN mondaic END MonadicOperator;
 PROCEDURE DyadicConstOperator*(op: INTEGER; x, y: Tree.Node): Tree.Node;
 VAR f: INTEGER;
 BEGIN
+  x.object := NIL;
   f := x.type.form;
   IF y.type.form # f THEN
     Machine.Error(Errors.incompatibleTypes)
