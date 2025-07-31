@@ -98,6 +98,8 @@ BEGIN
           Machine.NotImplemented('this standard procedure call');
         END
       END
+    ELSE
+      Machine.NotImplemented('this node class');
     END;
     n := n.link
   END
