@@ -72,16 +72,6 @@ VAR topScope*, universe, system*: Object;
   byteType*, boolType*, charType*, intType*, realType*: Type;
   setType*, nilType*, noType*, strType*: Type;
 
-PROCEDURE DD(n: INTEGER);
-BEGIN
-  Out.Char(1BX); Out.String('[41m');
-  Out.Char(1BX); Out.String('[30m');
-  Out.String(' ========================> DEBUG ===> ');
-  Out.Char(1BX); Out.String('[97m');
-  Out.Int(n, 0); Out.Char(' ');
-  Out.Char(1BX); Out.String('[0m'); Out.Ln
-END DD;
-
 PROCEDURE NewConst*(): ConstVal;
 VAR c: ConstVal;
 BEGIN

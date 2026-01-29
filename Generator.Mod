@@ -87,27 +87,6 @@ BEGIN
   Word(00001H); Word(0D400H)
 END Exit;
 
-PROCEDURE DummyCode*;
-BEGIN
-  Word(00020H); Word(0D280H);
-  Word(000E1H); Word(01000H);
-  Word(000E2H); Word(0D280H);
-  Word(00090H); Word(0D280H);
-
-  Word(00001H); Word(0D400H);
-  Word(00000H); Word(0D280H);
-  Word(00030H); Word(0D280H);
-  Word(00001H); Word(0D400H);
-
-  String('OBERON'); Byte(0AH); Byte(0)
-
-(*
-  Word(017E0H); Word(0D280H);
-  Word(00030H); Word(0D280H);
-  Word(00001H); Word(0D400H);
-  *)
-END DummyCode;
-
 (** MOV x{r}, #{imm} *)
 PROCEDURE MovImm*(r, imm: INTEGER);
 VAR n: INTEGER;

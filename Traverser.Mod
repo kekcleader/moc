@@ -1,28 +1,6 @@
 MODULE Traverser;
 IMPORT Out, Machine, Errors := MocErrors, E := Emitter, Generator, Table, Tree;
 
-PROCEDURE DD(n: INTEGER);
-BEGIN
-  Out.Char(1BX); Out.String('[41m');
-  Out.Char(1BX); Out.String('[30m');
-  Out.String(' ========================> DEBUG ===> ');
-  Out.Char(1BX); Out.String('[97m');
-  Out.Int(n, 0); Out.Char(' ');
-  Out.Char(1BX); Out.String('[0m'); Out.Ln
-END DD;
-
-(*
-PROCEDURE Module(module: Tree.Node);
-VAR node: Tree.Node;
-BEGIN
-  WHILE node # NIL DO
-    Traverse(node.left);
-    Traverse(node.right);
-    node := node.link
-  END
-END Module;
-*)
-
 PROCEDURE Designator(n: Tree.Node; VAR z: E.Item);
 BEGIN
   IF (n.class = Tree.NVar) OR (n.class = Tree.NVarPar) THEN
@@ -125,7 +103,6 @@ PROCEDURE Traverse*(module: Tree.Node);
 BEGIN
   Generator.Init;
   Statement(module)
-  (*Generator.DummyCode*)
 END Traverse;
 
 END Traverser.

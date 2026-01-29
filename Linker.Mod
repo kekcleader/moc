@@ -17,16 +17,6 @@ VAR
   codeLen: INTEGER;
   dataLen: INTEGER;
 
-PROCEDURE DD(n: INTEGER);
-BEGIN
-  Out.Char(1BX); Out.String('[41m');
-  Out.Char(1BX); Out.String('[30m');
-  Out.String(' ========================> DEBUG ===> ');
-  Out.Char(1BX); Out.String('[97m');
-  Out.Int(n, 0); Out.Char(' ');
-  Out.Char(1BX); Out.String('[0m'); Out.Ln
-END DD;
-
 (** Outputs 1 byte to the file. *)
 PROCEDURE Byte(x: BYTE);
 BEGIN
@@ -307,7 +297,7 @@ END Command3;
 PROCEDURE Command4;
 BEGIN
   (* Command LC_DYLD_CHAINED_FIXUPS *)
-  (*DWord(34H);*) (* FIXME <----------------- 34 00 00 80, what is 8 for? *)
+  (*DWord(34H);*) (* FIXME 34 00 00 80, what is 8 for? *)
   Byte(34H); Byte(0); Byte(0); Byte(80H);
   (* Command Size in bytes *)
   DWord(16);
@@ -320,7 +310,7 @@ END Command4;
 PROCEDURE Command5;
 BEGIN
   (* Command LC_DYLD_EXPORTS_TRIE *)
-  (*DWord(33H);*) (* FIXME <----------------- what is 8 for? *)
+  (*DWord(33H);*) (* FIXME what is 8 for? *)
   Byte(33H); Byte(0); Byte(0); Byte(80H);
   (* Command Size in bytes *)
   DWord(16);

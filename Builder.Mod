@@ -1,16 +1,6 @@
 MODULE Builder;
 IMPORT Out, Machine, Errors := MocErrors, Table, Tree, S := Scanner;
 
-PROCEDURE DD(n: INTEGER);
-BEGIN
-  Out.Char(1BX); Out.String('[41m');
-  Out.Char(1BX); Out.String('[30m');
-  Out.String(' ========================> DEBUG ===> ');
-  Out.Char(1BX); Out.String('[97m');
-  Out.Int(n, 0); Out.Char(' ');
-  Out.Char(1BX); Out.String('[0m'); Out.Ln
-END DD;
-
 PROCEDURE Enter*(procedures, statementSequence: Tree.Node;
   containingProc: Table.Object): Tree.Node;
 VAR enter: Tree.Node;
@@ -118,12 +108,9 @@ BEGIN
     ELSE
       Machine.Error(Errors.badDyadicOperands)
     END
-  ELSIF op = S.div THEN
-    (*TODO*)
-  ELSIF op = S.mod THEN
-    (*TODO*)
-  ELSIF op = S.and THEN
-    (*TODO*)
+  ELSIF op = S.div THEN (*TODO*)
+  ELSIF op = S.mod THEN (*TODO*)
+  ELSIF op = S.and THEN (*TODO*)
   ELSIF op = S.plus THEN
     IF f = Table.Int THEN
       x.constVal.intVal := x.constVal.intVal + y.constVal.intVal
@@ -140,20 +127,13 @@ BEGIN
     ELSE
       Machine.Error(Errors.badDyadicOperands)
     END
-  ELSIF op = S.or THEN
-    (*TODO*)
-  ELSIF op = S.eql THEN
-    (*TODO*)
-  ELSIF op = S.neq THEN
-    (*TODO*)
-  ELSIF op = S.lss THEN
-    (*TODO*)
-  ELSIF op = S.leq THEN
-    (*TODO*)
-  ELSIF op = S.gtr THEN
-    (*TODO*)
-  ELSIF op = S.geq THEN
-  (* TODO IN etc. *)
+  ELSIF op = S.or THEN (*TODO*)
+  ELSIF op = S.eql THEN (*TODO*)
+  ELSIF op = S.neq THEN (*TODO*)
+  ELSIF op = S.lss THEN (*TODO*)
+  ELSIF op = S.leq THEN (*TODO*)
+  ELSIF op = S.gtr THEN (*TODO*)
+  ELSIF op = S.geq THEN (*TODO, IN etc. *)
   END
 RETURN x END DyadicConstOperator;
 
