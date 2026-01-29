@@ -69,7 +69,7 @@ BEGIN
 END Set;
 
 (** Outputs string to the file (one byte per character) and then
-    zero-bytes until total of n bytes is reached. Th of the string.
+    zero-bytes until total of n bytes is reached.
     If n is smaller than the string, the string is not truncated. *)
 PROCEDURE String(s: ARRAY OF CHAR; n: INTEGER);
 VAR i: INTEGER;
