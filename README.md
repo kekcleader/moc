@@ -2,6 +2,8 @@
 
 ![MOC – Mac Oberon Compiler](moc.jpg)
 
+» [Download Thesis with the description of this compiler in PDF](https://github.com/kekcleader/OberonThesis2025/blob/main/MacosOberonCompiler2025.pdf)
+
 Oberon is a general-purpose programming language–the direct descendant of Pascal and Modula-2. It is both simpler and much more powerful than Pascal and Modula.
 
 Moc is a compiler for the language Oberon to macOS/ARM64 (Apple Silicon M1-M4 processors).
