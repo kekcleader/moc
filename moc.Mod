@@ -22,22 +22,34 @@ BEGIN
   Out.String(' --debug          Enable debug output'); Out.Ln; Out.Ln
 END Usage;
 
-(** Finds period and truncates the string there. Puts the result in exe.
-    'Module.Mod' -> 'Module'.
-    If period is not found, the result is an empty string. *)
+(** Strips extension from fname and puts result in exe.
+    './src/Module.Mod' -> './src/Module'.
+    'Module.Mod'       -> 'Module'.
+    'Module'           -> 'Module'.
+    './src/Module'     -> './src/Module'. *)
 PROCEDURE SourceToExeFname(fname: ARRAY OF CHAR; VAR exe: ARRAY OF CHAR);
-VAR i: INTEGER;
+VAR i, dotPos, slashPos: INTEGER;
 BEGIN
   i := 0;
-  WHILE (fname[i] # 0X) & (fname[i] # '.') DO
+  dotPos := -1;
+  slashPos := -1;
+  WHILE fname[i] # 0X DO
+    IF fname[i] = '.' THEN dotPos := i END;
+    IF fname[i] = '/' THEN slashPos := i END;
+    INC(i)
+  END;
+  IF dotPos <= slashPos THEN
+    dotPos := i
+  END;
+  i := 0;
+  WHILE i < dotPos DO
     exe[i] := fname[i];
     INC(i)
   END;
-  IF fname[i] = 0X THEN i := 0 END;
   exe[i] := 0X
 END SourceToExeFname;
 
-PROCEDURE ParseArgs(VAR mainFname, exeFname: ARRAY OF CHAR);
+PROCEDURE ParseArgs(VAR mainFname, exeFname: ARRAY OF CHAR): BOOLEAN;
 VAR i, count: INTEGER;
   s: ARRAY 256 OF CHAR;
   ok: BOOLEAN;
@@ -47,26 +59,49 @@ BEGIN
   exeFname := '';
   i := 1;
   count := Args.Count();
-  WHILE i <= count DO
+
+  WHILE (i <= count) & ok DO
     Args.Get(i, s);
     IF s = '-o' THEN
-      Args.Get(i + 1, exeFname);
-      INC(i)
+      IF i < count THEN
+        INC(i);
+        Args.Get(i, exeFname)
+      ELSE
+        Out.String("Error: '-o' requires an output file name."); Out.Ln;
+        ok := FALSE
+      END
     ELSIF s = '--debug' THEN
       Machine.SetDebug(TRUE)
     ELSIF mainFname = '' THEN
       Strings.Copy(s, mainFname)
     ELSE
+      Out.String("Error: Unrecognized parameter '"); Out.String(s); Out.String("'."); Out.Ln;
       ok := FALSE
     END;
     INC(i)
   END;
+
+  IF ok THEN
+    IF mainFname = '' THEN
+      Out.String('Error: No source file specified.'); Out.Ln;
+      ok := FALSE
+    ELSIF exeFname = '' THEN
+      SourceToExeFname(mainFname, exeFname)
+    END
+  END;
+
+  IF ok & (mainFname = exeFname) THEN
+    Out.String("Error: Refusing to overwrite the source file '");
+    Out.String(mainFname);
+    Out.String("' with the output binary."); Out.Ln;
+    ok := FALSE
+  END;
+
   IF ~ok THEN
-    Out.String('Error while parsing command line arguments. ');
     Usage
-  ELSIF exeFname = '' THEN
-    SourceToExeFname(mainFname, exeFname)
-  END
+  END;
+
+  RETURN ok
 END ParseArgs;
 
 PROCEDURE Run(mainFname, exeFname: ARRAY OF CHAR);
@@ -97,17 +132,15 @@ BEGIN
   END
 END Run;
 
-PROCEDURE PraseAndRun;
+PROCEDURE ParseAndRun;
 VAR
   mainFname, exeFname: ARRAY 256 OF CHAR;
 BEGIN
-  ParseArgs(mainFname, exeFname);
-  IF mainFname # '' THEN
+  IF ParseArgs(mainFname, exeFname) THEN
     Run(mainFname, exeFname)
-  ELSE
-    Out.String('No file specified.'); Out.Ln
   END
-END PraseAndRun;
+END ParseAndRun;
+
 
 PROCEDURE Do*;
 BEGIN
@@ -115,7 +148,7 @@ BEGIN
     Welcome;
     Usage
   ELSE
-    PraseAndRun
+    ParseAndRun
   END
 END Do;
 
