@@ -158,6 +158,19 @@ BEGIN
   DWord(n)
 END StrH;
 
+(** LDR w{r1}, [x{r2}] *)
+PROCEDURE LdrH*(r1, r2: INTEGER);
+VAR n, Rm, option, S: INTEGER;
+BEGIN
+  Rm := 0;
+  option := 0;
+  S := 0;
+  n := ((((1CAH * 20H + Rm) * 8 + option) * 2 + S) * 80H + r2) * 20H + r1;
+  n := -7FFFFFFFH - 1 + n; (* Set highest bit *)
+  DWord(n)
+END LdrH;
+
+
 (** SVC {a}, a is ignored for now. *)
 PROCEDURE Svc*(a: INTEGER);
 VAR n: INTEGER;

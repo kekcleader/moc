@@ -25,17 +25,40 @@ PROCEDURE Assign*(VAR z, x: Item);
 BEGIN
   IF z.type.form # Table.Int THEN
     Machine.NotImplemented('assignment to a non-INTEGER')
-  ELSIF x.mode # Table.Const THEN
-    Machine.NotImplemented('assignment of a non-constant value')
-  ELSE
+
+  ELSIF x.mode = Table.Const THEN
     G.MovHImm(0, x.address);
+    IF z.mode = Abs THEN
+      G.Adrp(1, 2);
+      IF z.address # 0 THEN
+        G.AddImm(1, 1, z.address)
+      END;
+      G.StrH(0, 1)
+    ELSE
+      Machine.NotImplemented('assignment to non-absolute destination')
+    END
+  ELSIF x.mode = Abs THEN
     G.Adrp(1, 2);
-    IF z.address # 0 THEN
-      G.AddImm(1, 1, z.address)
+    IF x.address # 0 THEN
+      G.AddImm(1, 1, x.address)
     END;
-    G.StrH(0, 1)
+    G.LdrH(0, 1);
+
+    IF z.mode = Abs THEN
+      G.Adrp(1, 2);
+      IF z.address # 0 THEN
+        G.AddImm(1, 1, z.address)
+      END;
+      G.StrH(0, 1)
+    ELSE
+      Machine.NotImplemented('assignment to non-absolute destination')
+    END
+
+  ELSE
+    Machine.NotImplemented('assignment of unknown mode')
   END
 END Assign;
+
 
 PROCEDURE Relation*(VAR x: Item);
 BEGIN
