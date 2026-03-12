@@ -13,6 +13,20 @@ CONST
   (** Node.subclass values **)
   assign* = 1;
 
+  plus*  = 10;
+  minus* = 11;
+  times* = 12;
+  div*   = 13;
+  mod*   = 14;
+  and*   = 15;
+  or*    = 16;
+  eql*   = 17;
+  neq*   = 18;
+  lss*   = 19;
+  leq*   = 20;
+  gtr*   = 21;
+  geq*   = 22;
+
 TYPE
   Ident = Scanner.Ident;
 

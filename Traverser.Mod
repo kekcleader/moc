@@ -55,7 +55,16 @@ BEGIN
   ELSIF n.class = Tree.NMonadic THEN
     Machine.NotImplemented('monadic expression')
   ELSIF n.class = Tree.NDyadic THEN
-    Machine.NotImplemented('dyadic expression')
+    Expression(n.left, x);
+    Expression(n.right, y);
+    IF n.subclass = Tree.plus THEN
+      E.Op(n.subclass, x, y);
+      z := x
+    ELSE
+      Machine.NotImplemented('only addition is supported')
+    END
+
+
   ELSIF n.class = Tree.NProc THEN
     Machine.NotImplemented('procedure expression')
   ELSE

@@ -146,6 +146,22 @@ BEGIN
   DWord(n)
 END AddImm;
 
+(** ADD w{r1}, w{r2}, w{r3} (32-bit, shifted register with 0 shift) *)
+PROCEDURE Add*(r1, r2, r3: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  (* base opcode for ADD (shifted register, 32-bit) = 0x0B000000 *)
+  n := 0B000000H;
+  (* Rm in bits 20..16 *)
+  n := n + r3 * 10000H;
+  (* Rn in bits 9..5 *)
+  n := n + r2 * 20H;
+  (* Rd in bits 4..0 *)
+  n := n + r1;
+  DWord(n)
+END Add;
+
+
 (** STR w{r1}, [x{r2}] *)
 PROCEDURE StrH*(r1, r2: INTEGER);
 VAR n, Rm, option, S: INTEGER;

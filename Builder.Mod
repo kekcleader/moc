@@ -163,13 +163,46 @@ RETURN x END DyadicConstOperator;
     <, <=, >, >=, IN, ASH, LEN, BIT, LSH, ROT. *)
 PROCEDURE DyadicOperator*(op: INTEGER; x, y: Tree.Node): Tree.Node;
 VAR dyadic: Tree.Node;
+    k: INTEGER;
 BEGIN
   IF (x.class = Tree.NConst) & (y.class = Tree.NConst) THEN
     dyadic := DyadicConstOperator(op, x, y)
-  ELSE 
+  ELSE
     dyadic := Tree.NewNode(Tree.NDyadic);
-    dyadic.subclass := op;
-    dyadic.type := x.type; (*FIXME change type depending on the op?*)
+
+    (* Mapping *)
+    IF op = S.times THEN
+      k := Tree.times
+    ELSIF op = S.div THEN
+      k := Tree.div
+    ELSIF op = S.mod THEN
+      k := Tree.mod
+    ELSIF op = S.and THEN
+      k := Tree.and
+    ELSIF op = S.plus THEN
+      k := Tree.plus
+    ELSIF op = S.minus THEN
+      k := Tree.minus
+    ELSIF op = S.or THEN
+      k := Tree.or
+    ELSIF op = S.eql THEN
+      k := Tree.eql
+    ELSIF op = S.neq THEN
+      k := Tree.neq
+    ELSIF op = S.lss THEN
+      k := Tree.lss
+    ELSIF op = S.leq THEN
+      k := Tree.leq
+    ELSIF op = S.gtr THEN
+      k := Tree.gtr
+    ELSIF op = S.geq THEN
+      k := Tree.geq
+    ELSE
+      Machine.NotImplemented('this dyadic operator')
+    END;
+
+    dyadic.subclass := k;
+    dyadic.type := x.type; (* FIXME: by type *)
     dyadic.left := x;
     dyadic.right := y
   END
