@@ -97,6 +97,10 @@ BEGIN
     G.Add(0, 0, 2)
   ELSIF op = Tree.minus THEN
     G.Sub(0, 0, 2)
+  ELSIF op = Tree.times THEN
+    G.Mul(0, 0, 2)
+  ELSIF op = Tree.div THEN
+    G.Div(0, 0, 2)
   ELSE
     Machine.NotImplemented('Op: unsupported dyadic operator')
   END;

@@ -57,13 +57,13 @@ BEGIN
   ELSIF n.class = Tree.NDyadic THEN
     Expression(n.left, x);
     Expression(n.right, y);
-    IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) THEN
+    IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) OR
+       (n.subclass = Tree.times) OR (n.subclass = Tree.div) THEN
       E.Op(n.subclass, x, y);
       z := x
     ELSE
       Machine.NotImplemented('this dyadic operator is not supported yet')
     END
-
 
   ELSIF n.class = Tree.NProc THEN
     Machine.NotImplemented('procedure expression')

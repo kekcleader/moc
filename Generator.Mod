@@ -176,6 +176,39 @@ BEGIN
   DWord(n)
 END Sub;
 
+(** MUL w{r1}, w{r2}, w{r3} (alias for MADD w{r1}, w{r2}, w{r3}, wzr) *)
+PROCEDURE Mul*(r1, r2, r3: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  (* Base opcode for 32-bit MADD: 0x1B000000 *)
+  n := 1B000000H;
+  (* Rm in bits 20..16 *)
+  n := n + r3 * 10000H;
+  (* Ra (addend) in bits 14..10. For MUL, Ra = 31 (WZR) *)
+  n := n + 31 * 400H;
+  (* Rn in bits 9..5 *)
+  n := n + r2 * 20H;
+  (* Rd in bits 4..0 *)
+  n := n + r1;
+  DWord(n)
+END Mul;
+
+(** SDIV w{r1}, w{r2}, w{r3} (32-bit signed divide) *)
+PROCEDURE Div*(r1, r2, r3: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  (* Base opcode for 32-bit SDIV: 0x1AC00C00 *)
+  n := 1AC00C00H;
+  (* Rm in bits 20..16 *)
+  n := n + r3 * 10000H;
+  (* Rn in bits 9..5 *)
+  n := n + r2 * 20H;
+  (* Rd in bits 4..0 *)
+  n := n + r1;
+  DWord(n)
+END Div;
+
+
 (** STR w{r1}, [x{r2}] *)
 PROCEDURE StrH*(r1, r2: INTEGER);
 VAR n, Rm, option, S: INTEGER;

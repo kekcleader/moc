@@ -81,13 +81,35 @@ BEGIN
   END
 END PrintNodeName;
 
+PROCEDURE PrintOperator(op: INTEGER);
+BEGIN
+  IF op = plus THEN Out.String('+')
+  ELSIF op = minus THEN Out.String('-')
+  ELSIF op = times THEN Out.String('*')
+  ELSIF op = div THEN Out.String('DIV')
+  ELSIF op = mod THEN Out.String('MOD')
+  ELSIF op = and THEN Out.String('AND')
+  ELSIF op = or THEN Out.String('OR')
+  ELSIF op = eql THEN Out.String('=')
+  ELSIF op = neq THEN Out.String('#')
+  ELSIF op = lss THEN Out.String('<')
+  ELSIF op = leq THEN Out.String('<=')
+  ELSIF op = gtr THEN Out.String('>')
+  ELSIF op = geq THEN Out.String('>=')
+  ELSE
+    Out.String('op('); Out.Int(op, 0); Out.Char(')')
+  END
+END PrintOperator;
+
+
 PROCEDURE Print*(node: Node; indent: INTEGER);
 BEGIN
   IF node # NIL THEN
     Indent(indent); PrintNodeName(node);
     IF (node.class = NDyadic) OR (node.class = NMonadic) THEN
       Out.Char(' ');
-      Errors.PrintSymbol(node.subclass)
+      (* Errors.PrintSymbol(node.subclass)*)
+      PrintOperator(node.subclass)
     END;
     IF (node.object # NIL) OR (node.class = NEnter) THEN
       Out.String(' (Object: ');
