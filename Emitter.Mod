@@ -93,14 +93,20 @@ BEGIN
     Machine.NotImplemented('right operand in Op')
   END;
 
-  (* ADD w0, w0, w2 *)
-  G.Add(0, 0, 2);
+  IF op = Tree.plus THEN
+    G.Add(0, 0, 2)
+  ELSIF op = Tree.minus THEN
+    G.Sub(0, 0, 2)
+  ELSE
+    Machine.NotImplemented('Op: unsupported dyadic operator')
+  END;
 
   (* Result in register 0 *)
   x.mode := Reg;
   x.address := 0;
   x.node := NIL;
 END Op;
+
 
 PROCEDURE Relation*(VAR x: Item);
 BEGIN

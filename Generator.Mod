@@ -161,6 +161,20 @@ BEGIN
   DWord(n)
 END Add;
 
+(** SUB w{r1}, w{r2}, w{r3} (32-bit, shifted register with 0 shift) *)
+PROCEDURE Sub*(r1, r2, r3: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  (* base opcode for SUB (shifted register, 32-bit) = 0x4B000000 *)
+  n := 4B000000H;
+  (* Rm in bits 20..16 *)
+  n := n + r3 * 10000H;
+  (* Rn in bits 9..5 *)
+  n := n + r2 * 20H;
+  (* Rd in bits 4..0 *)
+  n := n + r1;
+  DWord(n)
+END Sub;
 
 (** STR w{r1}, [x{r2}] *)
 PROCEDURE StrH*(r1, r2: INTEGER);

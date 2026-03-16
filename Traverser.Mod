@@ -57,11 +57,11 @@ BEGIN
   ELSIF n.class = Tree.NDyadic THEN
     Expression(n.left, x);
     Expression(n.right, y);
-    IF n.subclass = Tree.plus THEN
+    IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) THEN
       E.Op(n.subclass, x, y);
       z := x
     ELSE
-      Machine.NotImplemented('only addition is supported')
+      Machine.NotImplemented('this dyadic operator is not supported yet')
     END
 
 
