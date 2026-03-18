@@ -53,7 +53,13 @@ BEGIN
   ELSIF n.class = Tree.NVar THEN
     Designator(n, z)
   ELSIF n.class = Tree.NMonadic THEN
-    Machine.NotImplemented('monadic expression')
+    Expression(n.left, x);
+    IF n.subclass = Tree.minus THEN
+      E.MonadicOp(n.subclass, x);
+      z := x
+    ELSE
+      Machine.NotImplemented('this monadic operator is not supported yet')
+    END
   ELSIF n.class = Tree.NDyadic THEN
     Expression(n.left, x);
     Expression(n.right, y);

@@ -93,10 +93,18 @@ BEGIN
     END
   ELSE
     mondaic := Tree.NewNode(Tree.NMonadic);
-    mondaic.subclass := op;
+    (* Mapping unary operations *)
+    IF op = S.minus THEN
+      mondaic.subclass := Tree.minus
+    ELSIF op = S.not THEN
+      mondaic.subclass := Tree.not
+    ELSE
+      mondaic.subclass := op
+    END;
     mondaic.type := x.type; (*FIXME*)
     mondaic.left := x
   END
+
 RETURN mondaic END MonadicOperator;
 
 (** Performs an optimized dyadic operation op on NConst nodes x and y.

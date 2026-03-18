@@ -69,6 +69,35 @@ BEGIN
   END
 END Assign;
 
+PROCEDURE MonadicOp*(op: INTEGER; VAR x: Item);
+BEGIN
+  IF x.mode = Abs THEN
+    G.Adrp(1, 2);
+    IF x.address # 0 THEN G.AddImm(1, 1, x.address) END;
+    G.LdrH(2, 1)
+  ELSIF x.mode = Table.Const THEN
+    G.MovHImm(2, x.address)
+  ELSIF x.mode = Reg THEN
+    IF x.address = 0 THEN
+      G.AddImm(2, 0, 0) (* MOV w2, w0 (through ADD w2, w0, #0) *)
+    END
+  ELSE
+    Machine.NotImplemented('operand in MonadicOp')
+  END;
+
+  IF op = Tree.minus THEN
+    (* NEG w0, w2  ==  SUB w0, wzr, w2 *)
+    G.Sub(0, 31, 2)
+  ELSE
+    Machine.NotImplemented('MonadicOp: unsupported operator')
+  END;
+
+  (* Result in w0 *)
+  x.mode := Reg;
+  x.address := 0;
+  x.node := NIL
+END MonadicOp;
+
 PROCEDURE Op*(op: INTEGER; VAR x, y: Item);
 BEGIN
   (* Left operand to w0 *)

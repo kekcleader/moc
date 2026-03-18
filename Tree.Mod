@@ -26,6 +26,7 @@ CONST
   leq*   = 20;
   gtr*   = 21;
   geq*   = 22;
+  not*   = 23;
 
 TYPE
   Ident = Scanner.Ident;
@@ -96,6 +97,7 @@ BEGIN
   ELSIF op = leq THEN Out.String('<=')
   ELSIF op = gtr THEN Out.String('>')
   ELSIF op = geq THEN Out.String('>=')
+  ELSIF op = not THEN Out.String('~')
   ELSE
     Out.String('op('); Out.Int(op, 0); Out.Char(')')
   END
