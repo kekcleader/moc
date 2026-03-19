@@ -176,6 +176,24 @@ BEGIN
   DWord(n)
 END Sub;
 
+(** MSUB w{r1}, w{r2}, w{r3}, w{r4} *)
+PROCEDURE Msub*(r1, r2, r3, r4: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  (* Base opcode for 32-bit MSUB: 0x1B008000 *)
+  n := 1B008000H;
+  (* Rm in bits 20..16 *)
+  n := n + r3 * 10000H;
+  (* Ra (minuend) in bits 14..10 *)
+  n := n + r4 * 400H;
+  (* Rn in bits 9..5 *)
+  n := n + r2 * 20H;
+  (* Rd in bits 4..0 *)
+  n := n + r1;
+  DWord(n)
+END Msub;
+
+
 (** MUL w{r1}, w{r2}, w{r3} (alias for MADD w{r1}, w{r2}, w{r3}, wzr) *)
 PROCEDURE Mul*(r1, r2, r3: INTEGER);
 VAR n: INTEGER;

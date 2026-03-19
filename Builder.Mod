@@ -129,7 +129,11 @@ BEGIN
   ELSIF op = S.div THEN
     (*TODO*)
   ELSIF op = S.mod THEN
-    (*TODO*)
+    IF f = Table.Int THEN
+      x.constVal.intVal := x.constVal.intVal MOD y.constVal.intVal
+    ELSE
+      Machine.Error(Errors.badDyadicOperands)
+    END
   ELSIF op = S.and THEN
     (*TODO*)
   ELSIF op = S.plus THEN

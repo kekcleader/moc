@@ -64,7 +64,8 @@ BEGIN
     Expression(n.left, x);
     Expression(n.right, y);
     IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) OR
-       (n.subclass = Tree.times) OR (n.subclass = Tree.div) THEN
+       (n.subclass = Tree.times) OR (n.subclass = Tree.div) OR
+       (n.subclass = Tree.mod) THEN
       E.Op(n.subclass, x, y);
       z := x
     ELSE

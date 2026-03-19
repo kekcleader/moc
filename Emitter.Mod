@@ -130,6 +130,9 @@ BEGIN
     G.Mul(0, 0, 2)
   ELSIF op = Tree.div THEN
     G.Div(0, 0, 2)
+  ELSIF op = Tree.mod THEN
+    G.Div(3, 0, 2);      (* SDIV w3, w0, w2 *)
+    G.Msub(0, 3, 2, 0)   (* MSUB w0, w3, w2, w0 *)
   ELSE
     Machine.NotImplemented('Op: unsupported dyadic operator')
   END;
