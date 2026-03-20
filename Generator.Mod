@@ -5,6 +5,10 @@ CONST
   maxCodeLen* = 2000H;
   maxDataLen* = 2000H;
 
+  EQ* = 0;  NE* = 1;  (* Equal, Not Equal *)
+  GE* = 10; LT* = 11; (* Greater/Equal, Less Than *)
+  GT* = 12; LE* = 13; (* Greater Than, Less/Equal *)
+
 VAR
   code: ARRAY maxCodeLen OF BYTE;
   pc: INTEGER;
@@ -292,6 +296,11 @@ PROCEDURE DecRH*;
 BEGIN
   DEC(RH)
 END DecRH;
+
+PROCEDURE ResetRHTo*(newRH: INTEGER);
+BEGIN
+  RH := newRH
+END ResetRHTo;
 
 PROCEDURE ResetRH*;
 BEGIN

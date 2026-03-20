@@ -75,30 +75,41 @@ BEGIN
   (* x stay in the same register, mode and address don't changes *)
 END MonadicOp;
 
+
 PROCEDURE Op*(op: INTEGER; VAR x, y: Item);
+VAR resReg: INTEGER;
 BEGIN
   Load(x);
   Load(y);
 
+  IF x.address < y.address THEN
+    resReg := x.address
+  ELSE
+    resReg := y.address
+  END;
+
   IF op = Tree.plus THEN
-    G.Add(x.address, x.address, y.address)
+    G.Add(resReg, x.address, y.address)
   ELSIF op = Tree.minus THEN
-    G.Sub(x.address, x.address, y.address)
+    G.Sub(resReg, x.address, y.address)
   ELSIF op = Tree.times THEN
-    G.Mul(x.address, x.address, y.address)
+    G.Mul(resReg, x.address, y.address)
   ELSIF op = Tree.div THEN
-    G.Div(x.address, x.address, y.address)
+    G.Div(resReg, x.address, y.address)
   ELSIF op = Tree.mod THEN
-    G.Div(16, x.address, y.address);            (* SDIV w16, wX, wY *)
-    G.Msub(x.address, 16, y.address, x.address) (* MSUB wX, w16, wY, wX *)
+    G.Div(16, x.address, y.address);          (* SDIV w16, wX, wY *)
+    G.Msub(resReg, 16, y.address, x.address)  (* MSUB wRes, w16, wY, wX *)
   ELSE
     Machine.NotImplemented('Op: unsupported dyadic operator')
   END;
 
-  (* The result is in the left operand of register (x.address).
-     Right operand (y) is no longer needed, free high reg *)
-  G.DecRH
+  x.mode := Reg;
+  x.address := resReg;
+  x.node := NIL;
+
+  G.ResetRHTo(resReg + 1)
 END Op;
+
 
 
 PROCEDURE Relation*(VAR x: Item);
