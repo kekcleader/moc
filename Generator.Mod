@@ -10,8 +10,8 @@ VAR
   pc: INTEGER;
 
   dataLen: INTEGER; (** For global variables *)
-
   outOfMemory: BOOLEAN;
+  RH* : INTEGER; (* First free register *)
 
 PROCEDURE OutOfMemory;
 BEGIN
@@ -283,11 +283,27 @@ BEGIN
   FOR i := 0 TO dataLen - 1 DO Files.Write(r, 0) END
 END OutputData;
 
+PROCEDURE IncRH*;
+BEGIN
+  INC(RH)
+END IncRH;
+
+PROCEDURE DecRH*;
+BEGIN
+  DEC(RH)
+END DecRH;
+
+PROCEDURE ResetRH*;
+BEGIN
+  RH := 0
+END ResetRH;
+
 PROCEDURE Init*;
 VAR i: INTEGER;
 BEGIN
   FOR i := 0 TO LEN(code) - 1 DO code[i] := 0 END;
   pc := 0;
+  RH := 0;
   outOfMemory := FALSE
 END Init;
 

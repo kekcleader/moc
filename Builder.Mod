@@ -126,14 +126,26 @@ BEGIN
     ELSE
       Machine.Error(Errors.badDyadicOperands)
     END
-  ELSIF op = S.div THEN
-    (*TODO*)
-  ELSIF op = S.mod THEN
-    IF f = Table.Int THEN
-      x.constVal.intVal := x.constVal.intVal MOD y.constVal.intVal
-    ELSE
-      Machine.Error(Errors.badDyadicOperands)
-    END
+    ELSIF op = S.div THEN
+      IF f = Table.Int THEN
+        IF y.constVal.intVal = 0 THEN
+          Machine.Error(Errors.badDyadicOperands)
+        ELSE
+          x.constVal.intVal := x.constVal.intVal DIV y.constVal.intVal
+        END
+      ELSE
+        Machine.Error(Errors.badDyadicOperands)
+      END
+    ELSIF op = S.mod THEN
+      IF f = Table.Int THEN
+        IF y.constVal.intVal = 0 THEN
+          Machine.Error(Errors.badDyadicOperands)
+        ELSE
+          x.constVal.intVal := x.constVal.intVal MOD y.constVal.intVal
+        END
+      ELSE
+        Machine.Error(Errors.badDyadicOperands)
+      END
   ELSIF op = S.and THEN
     (*TODO*)
   ELSIF op = S.plus THEN

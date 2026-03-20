@@ -22,125 +22,82 @@ BEGIN
   Out.String(' node='); Tree.Print(x.node, 0)
 END Print;
 
+PROCEDURE Load*(VAR x: Item);
+BEGIN
+  IF x.mode = Table.Const THEN
+    G.MovHImm(G.RH, x.address);
+    x.mode := Reg;
+    x.address := G.RH;
+    G.IncRH;
+  ELSIF x.mode = Abs THEN
+    G.Adrp(16, 2); (* use x16 as scratch *)
+    IF x.address # 0 THEN G.AddImm(16, 16, x.address) END;
+    G.LdrH(G.RH, 16);
+    x.mode := Reg;
+    x.address := G.RH;
+    G.IncRH
+  ELSIF x.mode = Reg THEN
+    (* In register already, nothing to do *)
+  ELSE
+    Machine.NotImplemented('Load: unsupported mode')
+  END
+END Load;
+
+
+
 PROCEDURE Assign*(VAR z, x: Item);
 BEGIN
   IF z.type.form # Table.Int THEN
     Machine.NotImplemented('assignment to a non-INTEGER')
-
-  ELSIF x.mode = Table.Const THEN
-    G.MovHImm(0, x.address);
-    IF z.mode = Abs THEN
-      G.Adrp(1, 2);
-      IF z.address # 0 THEN
-        G.AddImm(1, 1, z.address)
-      END;
-      G.StrH(0, 1)
-    ELSE
-      Machine.NotImplemented('assignment to non-absolute destination')
-    END
-  ELSIF x.mode = Abs THEN
-    G.Adrp(1, 2);
-    IF x.address # 0 THEN
-      G.AddImm(1, 1, x.address)
+  END;
+  Load(x);
+  IF z.mode = Abs THEN
+    G.Adrp(16, 2);
+    IF z.address # 0 THEN
+      G.AddImm(16, 16, z.address)
     END;
-    G.LdrH(0, 1);
-
-    IF z.mode = Abs THEN
-      G.Adrp(1, 2);
-      IF z.address # 0 THEN
-        G.AddImm(1, 1, z.address)
-      END;
-      G.StrH(0, 1)
-    ELSE
-      Machine.NotImplemented('assignment to non-absolute destination')
-    END
-  ELSIF x.mode = Reg THEN
-    IF z.mode = Abs THEN
-      G.Adrp(1, 2);
-      IF z.address # 0 THEN
-        G.AddImm(1, 1, z.address)
-      END;
-      G.StrH(x.address, 1)
-    ELSE
-      Machine.NotImplemented('assignment to non-absolute destination')
-    END
+    G.StrH(x.address, 16)
   ELSE
-    Machine.NotImplemented('assignment of unknown mode')
+    Machine.NotImplemented('assignment to non-absolute destination')
   END
 END Assign;
 
 PROCEDURE MonadicOp*(op: INTEGER; VAR x: Item);
 BEGIN
-  IF x.mode = Abs THEN
-    G.Adrp(1, 2);
-    IF x.address # 0 THEN G.AddImm(1, 1, x.address) END;
-    G.LdrH(2, 1)
-  ELSIF x.mode = Table.Const THEN
-    G.MovHImm(2, x.address)
-  ELSIF x.mode = Reg THEN
-    IF x.address = 0 THEN
-      G.AddImm(2, 0, 0) (* MOV w2, w0 (through ADD w2, w0, #0) *)
-    END
-  ELSE
-    Machine.NotImplemented('operand in MonadicOp')
-  END;
+  Load(x);
 
   IF op = Tree.minus THEN
-    (* NEG w0, w2  ==  SUB w0, wzr, w2 *)
-    G.Sub(0, 31, 2)
+    (* SUB wX, wzr, wX *)
+    G.Sub(x.address, 31, x.address)
   ELSE
     Machine.NotImplemented('MonadicOp: unsupported operator')
-  END;
-
-  (* Result in w0 *)
-  x.mode := Reg;
-  x.address := 0;
-  x.node := NIL
+  END
+  (* x stay in the same register, mode and address don't changes *)
 END MonadicOp;
 
 PROCEDURE Op*(op: INTEGER; VAR x, y: Item);
 BEGIN
-  (* Left operand to w0 *)
-  IF x.mode = Abs THEN
-    G.Adrp(1, 2);
-    IF x.address # 0 THEN G.AddImm(1, 1, x.address) END;
-    G.LdrH(0, 1)
-  ELSIF x.mode = Table.Const THEN
-    G.MovHImm(0, x.address)
-  ELSE
-    Machine.NotImplemented('left operand in Op')
-  END;
-
-  (* Right operand to w2 *)
-  IF y.mode = Abs THEN
-    G.Adrp(1, 2);
-    IF y.address # 0 THEN G.AddImm(1, 1, y.address) END;
-    G.LdrH(2, 1)
-  ELSIF y.mode = Table.Const THEN
-    G.MovHImm(2, y.address)
-  ELSE
-    Machine.NotImplemented('right operand in Op')
-  END;
+  Load(x);
+  Load(y);
 
   IF op = Tree.plus THEN
-    G.Add(0, 0, 2)
+    G.Add(x.address, x.address, y.address)
   ELSIF op = Tree.minus THEN
-    G.Sub(0, 0, 2)
+    G.Sub(x.address, x.address, y.address)
   ELSIF op = Tree.times THEN
-    G.Mul(0, 0, 2)
+    G.Mul(x.address, x.address, y.address)
   ELSIF op = Tree.div THEN
-    G.Div(0, 0, 2)
+    G.Div(x.address, x.address, y.address)
   ELSIF op = Tree.mod THEN
-    G.Div(3, 0, 2);      (* SDIV w3, w0, w2 *)
-    G.Msub(0, 3, 2, 0)   (* MSUB w0, w3, w2, w0 *)
+    G.Div(16, x.address, y.address);            (* SDIV w16, wX, wY *)
+    G.Msub(x.address, 16, y.address, x.address) (* MSUB wX, w16, wY, wX *)
   ELSE
     Machine.NotImplemented('Op: unsupported dyadic operator')
   END;
 
-  (* Result in register 0 *)
-  x.mode := Reg;
-  x.address := 0;
-  x.node := NIL;
+  (* The result is in the left operand of register (x.address).
+     Right operand (y) is no longer needed, free high reg *)
+  G.DecRH
 END Op;
 
 

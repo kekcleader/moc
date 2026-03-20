@@ -84,6 +84,7 @@ VAR x, y, z: E.Item;
   con: Table.ConstVal;
 BEGIN
   WHILE ~Machine.hadErrors & (n # NIL) DO
+    Generator.ResetRH;
     IF n.class = Tree.NEnter THEN
       IF n.object = NIL THEN (* n is module *)
         E.Enter;
