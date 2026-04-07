@@ -29,9 +29,9 @@ BEGIN
     z.node := n;
     z.type := n.object.type;
     z.mode := E.Abs; (* Global variable *)
-    z.address := n.object.address;
-    z.offset := 0;
-    z.index := 0
+    z.a := n.object.address;
+    z.b := 0;
+    z.r := 0
   ELSE
     Machine.NotImplemented('designator of this type')
   END
@@ -46,7 +46,7 @@ BEGIN
   IF n.class = Tree.NConst THEN
     IF n.type.form IN {Table.Int, Table.Char} THEN
       z.mode := Table.Const;
-      z.address := n.constVal.intVal
+      z.a := n.constVal.intVal
     ELSE
       Machine.NotImplemented('constant expression of this type')
     END
@@ -87,7 +87,7 @@ END Expression;
 PROCEDURE Statement(n: Tree.Node);
 VAR x, y, z: E.Item;
   con: Table.ConstVal;
-  fixupPC: INTEGER;
+  loopStart: INTEGER;
 BEGIN
   WHILE ~Machine.hadErrors & (n # NIL) DO
     Generator.ResetRH;
@@ -123,11 +123,18 @@ BEGIN
       END
     ELSIF n.class = Tree.NIf THEN
       Expression(n.left, x);
-      (* Jump over THEN block if condition is false *)
-      E.CondBranch(x, fixupPC);
+      E.CFJump(x);           (* Jump over THEN block if condition is false *)
       Statement(n.right);
-      (* Resolve the forward jump address *)
-      Generator.FixLink(fixupPC)
+      E.FixLink(x.a)         (* Resolve the forward jump address *)
+
+    ELSIF n.class = Tree.NWhile THEN
+      loopStart := Generator.Here();
+      Expression(n.left, x);
+      E.CFJump(x);           (* Jump out of loop if condition is false *)
+      Statement(n.right);
+      E.BJump(loopStart);    (* Jump back to condition evaluation *)
+      E.FixLink(x.a)         (* Resolve the loop exit address *)
+
     ELSE
       Machine.NotImplemented('this node class');
     END;

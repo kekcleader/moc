@@ -316,29 +316,52 @@ BEGIN
   DWord(n)
 END EmitBranch;
 
-(** Resolves forward references (backpatching) *)
-PROCEDURE FixLink*(branchPC: INTEGER);
-VAR offset, instr, op: INTEGER;
+(** Current position in code (in words, not bytes) *)
+PROCEDURE Here*(): INTEGER;
+RETURN pc DIV 4 END Here;
+
+(** Read 19-bit offset from B.cond instruction at address L (in words) *)
+PROCEDURE ImmFromBCond*(L: INTEGER): INTEGER;
+VAR instr, imm19, bytePos: INTEGER;
 BEGIN
-  offset := (pc - branchPC) DIV 4;
+  bytePos := L * 4;
+  instr := code[bytePos] + code[bytePos+1]*100H +
+           code[bytePos+2]*10000H + code[bytePos+3]*1000000H;
+  imm19 := (instr DIV 20H) MOD 80000H;
+  IF imm19 >= 40000H THEN DEC(imm19, 80000H) END
+RETURN imm19 END ImmFromBCond;
 
-  instr := code[branchPC] + code[branchPC+1] * 100H +
-           code[branchPC+2] * 10000H + code[branchPC+3] * 1000000H;
+(** Patch the B.cond instruction at address L, replacing its offset with (target - L) *)
+PROCEDURE PatchBCond*(L, target: INTEGER);
+VAR offset, instr, cond, bytePos: INTEGER;
+BEGIN
+  bytePos := L * 4;
+  instr := code[bytePos] + code[bytePos+1]*100H +
+           code[bytePos+2]*10000H + code[bytePos+3]*1000000H;
+  cond := instr MOD 10H;
+  offset := target - L;
+  instr := 54000000H + (offset MOD 80000H) * 20H + cond;
+  code[bytePos]   := instr MOD 100H;
+  code[bytePos+1] := (instr DIV 100H) MOD 100H;
+  code[bytePos+2] := (instr DIV 10000H) MOD 100H;
+  code[bytePos+3] := (instr DIV 1000000H) MOD 100H
+END PatchBCond;
 
-  op := (instr DIV 1000000H) MOD 100H;
-  IF op = 54H THEN (* B.cond *)
-    instr := instr + offset * 20H
-  ELSIF op = 14H THEN (* B *)
-    instr := instr + offset
-  ELSE
-    Machine.NotImplemented('FixLink: not a branch instruction')
-  END;
+(** Gives an instruction B.cond. cond, offset - shift to the previous element (or 0) *)
+PROCEDURE BCond*(cond, offset: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 54000000H + (offset MOD 80000H) * 20H + cond;
+  DWord(n)
+END BCond;
 
-  code[branchPC]   := instr MOD 100H;
-  code[branchPC+1] := (instr DIV 100H) MOD 100H;
-  code[branchPC+2] := (instr DIV 10000H) MOD 100H;
-  code[branchPC+3] := (instr DIV 1000000H) MOD 100H
-END FixLink;
+(** Gives an unconditional jump instruction B. *)
+PROCEDURE B*(offset: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 14000000H + (offset MOD 4000000H);
+  DWord(n)
+END B;
 
 PROCEDURE IncRH*;
 BEGIN

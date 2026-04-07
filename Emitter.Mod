@@ -11,12 +11,14 @@ TYPE
     mode*: INTEGER; (** Object.class values + Item.mode values *)
     type*: Table.Type;
     node*: Tree.Node;
-    address*, offset*, index*: INTEGER
+    a*, b*, r*: INTEGER;
   END;
 
 PROCEDURE Print*(x: Item);
 BEGIN
-  Out.String('address='); Out.Int(x.address, 0);
+  Out.String(' a='); Out.Int(x.a, 0);
+  Out.String(' b='); Out.Int(x.b, 0);
+  Out.String(' r='); Out.Int(x.r, 0);
   Out.String(' mode='); Out.Int(x.mode, 0);
   Out.String(' type='); Table.PrintType(x.type);
   Out.String(' node='); Tree.Print(x.node, 0)
@@ -25,16 +27,16 @@ END Print;
 PROCEDURE Load*(VAR x: Item);
 BEGIN
   IF x.mode = Table.Const THEN
-    G.MovHImm(G.RH, x.address);
+    G.MovHImm(G.RH, x.a);
     x.mode := Reg;
-    x.address := G.RH;
+    x.r := G.RH;
     G.IncRH;
   ELSIF x.mode = Abs THEN
     G.Adrp(16, 2); (* use x16 as scratch *)
-    IF x.address # 0 THEN G.AddImm(16, 16, x.address) END;
+    IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
     G.LdrH(G.RH, 16);
     x.mode := Reg;
-    x.address := G.RH;
+    x.r := G.RH;
     G.IncRH
   ELSIF x.mode = Reg THEN
     (* In register already, nothing to do *)
@@ -51,10 +53,10 @@ BEGIN
   Load(x);
   IF z.mode = Abs THEN
     G.Adrp(16, 2);
-    IF z.address # 0 THEN
-      G.AddImm(16, 16, z.address)
+    IF z.a # 0 THEN
+      G.AddImm(16, 16, z.a)
     END;
-    G.StrH(x.address, 16)
+    G.StrH(x.r, 16)
   ELSE
     Machine.NotImplemented('assignment to non-absolute destination')
   END
@@ -66,7 +68,7 @@ BEGIN
 
   IF op = Tree.minus THEN
     (* SUB wX, wzr, wX *)
-    G.Sub(x.address, 31, x.address)
+    G.Sub(x.r, 31, x.r)
   ELSE
     Machine.NotImplemented('MonadicOp: unsupported operator')
   END
@@ -80,29 +82,29 @@ BEGIN
   Load(x);
   Load(y);
 
-  IF x.address < y.address THEN
-    resReg := x.address
+  IF x.r < y.r THEN
+    resReg := x.r
   ELSE
-    resReg := y.address
+    resReg := y.r
   END;
 
   IF op = Tree.plus THEN
-    G.Add(resReg, x.address, y.address)
+    G.Add(resReg, x.r, y.r)
   ELSIF op = Tree.minus THEN
-    G.Sub(resReg, x.address, y.address)
+    G.Sub(resReg, x.r, y.r)
   ELSIF op = Tree.times THEN
-    G.Mul(resReg, x.address, y.address)
+    G.Mul(resReg, x.r, y.r)
   ELSIF op = Tree.div THEN
-    G.Div(resReg, x.address, y.address)
+    G.Div(resReg, x.r, y.r)
   ELSIF op = Tree.mod THEN
-    G.Div(16, x.address, y.address);          (* SDIV w16, wX, wY *)
-    G.Msub(resReg, 16, y.address, x.address)  (* MSUB wRes, w16, wY, wX *)
+    G.Div(16, x.r, y.r);          (* SDIV w16, wX, wY *)
+    G.Msub(resReg, 16, y.r, x.r)  (* MSUB wRes, w16, wY, wX *)
   ELSE
     Machine.NotImplemented('Op: unsupported dyadic operator')
   END;
 
   x.mode := Reg;
-  x.address := resReg;
+  x.r := resReg;
   x.node := NIL;
 
   G.ResetRHTo(resReg + 1)
@@ -113,27 +115,30 @@ BEGIN
   Load(x);
   Load(y);
 
-  G.Cmp(x.address, y.address);
+  G.Cmp(x.r, y.r);
 
   (* CMP only sets status flags. Free both registers *)
   G.ResetRHTo(0);
 
-  (* Store inverted condition code for the branch *)
+  (* Store direct condition code for the branch *)
   x.mode := Table.Const;
-  IF op = Tree.eql THEN x.address := G.NE
-  ELSIF op = Tree.neq THEN x.address := G.EQ
-  ELSIF op = Tree.lss THEN x.address := G.GE
-  ELSIF op = Tree.leq THEN x.address := G.GT
-  ELSIF op = Tree.gtr THEN x.address := G.LE
-  ELSIF op = Tree.geq THEN x.address := G.LT
+  IF op = Tree.eql THEN x.r := G.EQ
+  ELSIF op = Tree.neq THEN x.r := G.NE
+  ELSIF op = Tree.lss THEN x.r := G.LT
+  ELSIF op = Tree.leq THEN x.r := G.LE
+  ELSIF op = Tree.gtr THEN x.r := G.GT
+  ELSIF op = Tree.geq THEN x.r := G.GE
   ELSE Machine.NotImplemented('CmpOp: unknown operator')
-  END
+  END;
+
+  x.a := 0;
+  x.b := 0
 END CmpOp;
 
 PROCEDURE CondBranch*(VAR x: Item; VAR branchPC: INTEGER);
 BEGIN
   IF x.mode = Table.Const THEN
-    G.EmitCondBranch(x.address, branchPC)
+    G.EmitCondBranch(x.r, branchPC)
   ELSE
     Machine.NotImplemented('CondBranch: expected condition code')
   END
@@ -143,6 +148,45 @@ PROCEDURE Relation*(VAR x: Item);
 BEGIN
 
 END Relation;
+
+PROCEDURE FixLinkWith*(L, target: INTEGER);
+VAR nextL: INTEGER;
+BEGIN
+  WHILE L # 0 DO
+    nextL := G.ImmFromBCond(L);
+    G.PatchBCond(L, target);
+    L := nextL
+  END
+END FixLinkWith;
+
+PROCEDURE FixLink*(L: INTEGER);
+BEGIN
+  FixLinkWith(L, G.Here())
+END FixLink;
+
+(** Inverts ARM64 condition code *)
+PROCEDURE Negated*(code: INTEGER): INTEGER;
+BEGIN
+  IF ODD(code) THEN DEC(code) ELSE INC(code) END
+RETURN code END Negated;
+
+(** Conditional Forward Jump (Jump conditionally IF and WHILE) *)
+PROCEDURE CFJump*(VAR x: Item);
+BEGIN
+  IF x.mode # Table.Const THEN Machine.NotImplemented('CFJump: expected condition code') END;
+
+  FixLink(x.b);
+  x.b := 0;
+
+  G.BCond(Negated(x.r), x.a);
+  x.a := G.Here() - 1
+END CFJump;
+
+(** Unconditional Backward Jump (Jump conditionally in WHILE) *)
+PROCEDURE BJump*(L: INTEGER);
+BEGIN
+  G.B(L - G.Here())
+END BJump;
 
 PROCEDURE OutLn*;
 BEGIN

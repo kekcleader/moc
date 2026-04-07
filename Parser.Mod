@@ -341,15 +341,32 @@ BEGIN
 
 RETURN ifNode END IfStatement;
 
-
-
+(** WhileStatement = WHILE expression DO StatementSequence
+{ELSIF expression DO StatementSequence} END. *)
 (** WhileStatement = WHILE expression DO StatementSequence
     {ELSIF expression DO StatementSequence} END. *)
 PROCEDURE WhileStatement(): Tree.Node;
-VAR while: Tree.Node;
+VAR whileNode, expr, statements: Tree.Node;
 BEGIN
+  expr := Expression();
+  Skip(S.do);
+  statements := StatementSequence();
 
-RETURN while END WhileStatement;
+  WHILE sym = S.elsif DO
+    Machine.NotImplemented('WHILE ELSIF clause');
+    S.Get(sym);
+    expr := Expression();
+    Skip(S.do);
+    statements := StatementSequence()
+  END;
+
+  Skip(S.end);
+
+  whileNode := Tree.NewNode(Tree.NWhile);
+  whileNode.left := expr;
+  whileNode.right := statements
+
+RETURN whileNode END WhileStatement;
 
 (** RepeatStatement = REPEAT StatementSequence UNTIL expression. *)
 PROCEDURE RepeatStatement(): Tree.Node;
