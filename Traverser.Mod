@@ -62,11 +62,16 @@ BEGIN
     END
   ELSIF n.class = Tree.NDyadic THEN
     Expression(n.left, x);
+    E.Load(x);
     Expression(n.right, y);
+    E.Load(y);
     IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) OR
        (n.subclass = Tree.times) OR (n.subclass = Tree.div) OR
        (n.subclass = Tree.mod) THEN
       E.Op(n.subclass, x, y);
+      z := x
+    ELSIF (n.subclass >= Tree.eql) & (n.subclass <= Tree.geq) THEN
+      E.CmpOp(n.subclass, x, y);
       z := x
     ELSE
       Machine.NotImplemented('this dyadic operator is not supported yet')
@@ -82,6 +87,7 @@ END Expression;
 PROCEDURE Statement(n: Tree.Node);
 VAR x, y, z: E.Item;
   con: Table.ConstVal;
+  fixupPC: INTEGER;
 BEGIN
   WHILE ~Machine.hadErrors & (n # NIL) DO
     Generator.ResetRH;
@@ -115,6 +121,13 @@ BEGIN
           Machine.NotImplemented('this standard procedure call');
         END
       END
+    ELSIF n.class = Tree.NIf THEN
+      Expression(n.left, x);
+      (* Jump over THEN block if condition is false *)
+      E.CondBranch(x, fixupPC);
+      Statement(n.right);
+      (* Resolve the forward jump address *)
+      Generator.FixLink(fixupPC)
     ELSE
       Machine.NotImplemented('this node class');
     END;

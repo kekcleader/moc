@@ -104,6 +104,7 @@ BEGIN
 RETURN object END Qualident;
 
 PROCEDURE ^ Expression(): Tree.Node;
+PROCEDURE ^ StatementSequence(): Tree.Node;
 
 (** designator = qualident {selector}.
      selector = "." ident | "[" ExpList "]" | "^" | "(" qualident ")". *)
@@ -327,10 +328,20 @@ RETURN assign END Assignment;
     {ELSIF expression THEN StatementSequence}
     [ELSE StatementSequence] END. *)
 PROCEDURE IfStatement(): Tree.Node;
-VAR if: Tree.Node;
+VAR ifNode, expr, statements: Tree.Node;
 BEGIN
+  expr := Expression();
+  Skip(S.then);
+  statements := StatementSequence();
+  Skip(S.end);
 
-RETURN if END IfStatement;
+  ifNode := Tree.NewNode(Tree.NIf);
+  ifNode.left := expr;
+  ifNode.right := statements;
+
+RETURN ifNode END IfStatement;
+
+
 
 (** WhileStatement = WHILE expression DO StatementSequence
     {ELSIF expression DO StatementSequence} END. *)

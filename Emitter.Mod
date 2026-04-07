@@ -43,8 +43,6 @@ BEGIN
   END
 END Load;
 
-
-
 PROCEDURE Assign*(VAR z, x: Item);
 BEGIN
   IF z.type.form # Table.Int THEN
@@ -110,7 +108,36 @@ BEGIN
   G.ResetRHTo(resReg + 1)
 END Op;
 
+PROCEDURE CmpOp*(op: INTEGER; VAR x, y: Item);
+BEGIN
+  Load(x);
+  Load(y);
 
+  G.Cmp(x.address, y.address);
+
+  (* CMP only sets status flags. Free both registers *)
+  G.ResetRHTo(0);
+
+  (* Store inverted condition code for the branch *)
+  x.mode := Table.Const;
+  IF op = Tree.eql THEN x.address := G.NE
+  ELSIF op = Tree.neq THEN x.address := G.EQ
+  ELSIF op = Tree.lss THEN x.address := G.GE
+  ELSIF op = Tree.leq THEN x.address := G.GT
+  ELSIF op = Tree.gtr THEN x.address := G.LE
+  ELSIF op = Tree.geq THEN x.address := G.LT
+  ELSE Machine.NotImplemented('CmpOp: unknown operator')
+  END
+END CmpOp;
+
+PROCEDURE CondBranch*(VAR x: Item; VAR branchPC: INTEGER);
+BEGIN
+  IF x.mode = Table.Const THEN
+    G.EmitCondBranch(x.address, branchPC)
+  ELSE
+    Machine.NotImplemented('CondBranch: expected condition code')
+  END
+END CondBranch;
 
 PROCEDURE Relation*(VAR x: Item);
 BEGIN

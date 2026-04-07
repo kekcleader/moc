@@ -287,6 +287,59 @@ BEGIN
   FOR i := 0 TO dataLen - 1 DO Files.Write(r, 0) END
 END OutputData;
 
+(** CMP w{r1}, w{r2} (alias for SUBS wzr, w{r1}, w{r2}) *)
+PROCEDURE Cmp*(r1, r2: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 6B000000H;
+  n := n + r2 * 10000H;
+  n := n + r1 * 20H;
+  n := n + 31; (* Rd = 31 (WZR) *)
+  DWord(n)
+END Cmp;
+
+(** B.cond (Conditional branch) *)
+PROCEDURE EmitCondBranch*(cond: INTEGER; VAR branchPC: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  branchPC := pc;
+  n := 54000000H + cond; (* Base 0x54000000, offset 0 *)
+  DWord(n)
+END EmitCondBranch;
+
+(** B (Unconditional branch) *)
+PROCEDURE EmitBranch*(VAR branchPC: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  branchPC := pc;
+  n := 14000000H; (* Base 0x14000000, offset 0 *)
+  DWord(n)
+END EmitBranch;
+
+(** Resolves forward references (backpatching) *)
+PROCEDURE FixLink*(branchPC: INTEGER);
+VAR offset, instr, op: INTEGER;
+BEGIN
+  offset := (pc - branchPC) DIV 4;
+
+  instr := code[branchPC] + code[branchPC+1] * 100H +
+           code[branchPC+2] * 10000H + code[branchPC+3] * 1000000H;
+
+  op := (instr DIV 1000000H) MOD 100H;
+  IF op = 54H THEN (* B.cond *)
+    instr := instr + offset * 20H
+  ELSIF op = 14H THEN (* B *)
+    instr := instr + offset
+  ELSE
+    Machine.NotImplemented('FixLink: not a branch instruction')
+  END;
+
+  code[branchPC]   := instr MOD 100H;
+  code[branchPC+1] := (instr DIV 100H) MOD 100H;
+  code[branchPC+2] := (instr DIV 10000H) MOD 100H;
+  code[branchPC+3] := (instr DIV 1000000H) MOD 100H
+END FixLink;
+
 PROCEDURE IncRH*;
 BEGIN
   INC(RH)
