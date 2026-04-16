@@ -6,6 +6,7 @@ CONST
   Abs* = 20;
   Reg* = 21;
 
+
 TYPE
   Item* = RECORD
     mode*: INTEGER; (** Object.class values + Item.mode values *)
@@ -13,6 +14,9 @@ TYPE
     node*: Tree.Node;
     a*, b*, r*: INTEGER;
   END;
+
+VAR
+  scratchOffset: INTEGER;
 
 PROCEDURE Print*(x: Item);
 BEGIN
@@ -182,6 +186,13 @@ BEGIN
   x.a := G.Here() - 1
 END CFJump;
 
+(** Unconditional Forward Jump — chains into escape list for IF/ELSIF END *)
+PROCEDURE FJump*(VAR L: INTEGER);
+BEGIN
+  G.BCond(14 (* AL = always true *), L);
+  L := G.Here() - 1
+END FJump;
+
 (** Unconditional Backward Jump (Jump conditionally in WHILE) *)
 PROCEDURE BJump*(L: INTEGER);
 BEGIN
@@ -198,13 +209,22 @@ BEGIN
   G.Svc(0)
 END OutLn;
 
-PROCEDURE OutInt*(params: Tree.Node);
+PROCEDURE SetScratchOffset*(offset: INTEGER);
 BEGIN
-  G.MovImm( 0, 1);        (* stdout *)
-  G.Adrp  ( 1, 2);        (* address *)
-  G.AddImm( 1, 1, params.object.address);
-  G.MovImm( 2, 1);        (* length = 1 *)
-  G.MovImm(16, 4);        (* write *)
+  scratchOffset := offset
+END SetScratchOffset;
+
+PROCEDURE OutInt*(VAR x: Item);
+BEGIN
+  Load(x);
+  G.Adrp(16, 2);
+  G.AddImm(16, 16, scratchOffset);
+  G.StrH(x.r, 16);
+  G.MovImm( 0, 1);
+  G.Adrp  ( 1, 2);
+  G.AddImm( 1, 1, scratchOffset);
+  G.MovImm( 2, 1);
+  G.MovImm(16, 4);
   G.Svc(0)
 END OutInt;
 

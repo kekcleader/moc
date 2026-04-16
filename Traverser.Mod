@@ -87,7 +87,8 @@ END Expression;
 PROCEDURE Statement(n: Tree.Node);
 VAR x, y, z: E.Item;
   con: Table.ConstVal;
-  loopStart: INTEGER;
+  loopStart, escapeList: INTEGER;
+  node: Tree.Node;
 BEGIN
   WHILE ~Machine.hadErrors & (n # NIL) DO
     Generator.ResetRH;
@@ -116,17 +117,38 @@ BEGIN
         IF con.intVal = -20 THEN
           E.OutLn
         ELSIF con.intVal = -21 THEN
-          E.OutInt(n.right)
+        Expression(n.right, x);
+        E.OutInt(x)
         ELSE
           Machine.NotImplemented('this standard procedure call');
         END
       END
     ELSIF n.class = Tree.NIf THEN
-      Expression(n.left, x);
-      E.CFJump(x);           (* Jump over THEN block if condition is false *)
-      Statement(n.right);
-      E.FixLink(x.a)         (* Resolve the forward jump address *)
-
+      escapeList := 0;
+      node := n;
+      WHILE node # NIL DO
+        IF node.class = Tree.NIf THEN
+          Expression(node.left, x);
+          E.CFJump(x);
+          Statement(node.right);
+          E.FJump(escapeList);
+          E.FixLink(x.a);
+          node := node.els
+        ELSIF node.class = Tree.NIfElse THEN
+          IF node.left # NIL THEN
+            Expression(node.left, x);
+            E.CFJump(x);
+            Statement(node.right);
+            E.FJump(escapeList);
+            E.FixLink(x.a);
+            node := node.els
+          ELSE
+            Statement(node.right);
+            node := NIL
+          END
+        END
+      END;
+      E.FixLink(escapeList)
     ELSIF n.class = Tree.NWhile THEN
       loopStart := Generator.Here();
       Expression(n.left, x);
@@ -155,7 +177,9 @@ BEGIN
     END;
     object := object.next
   END;
-  Generator.SetDataLen(size)
+  (*Generator.SetDataLen(size) *)
+  Generator.SetDataLen(size + 4);
+  E.SetScratchOffset(size)
 END SetAddressesAndSizes;
 
 PROCEDURE Traverse*(module: Tree.Node);

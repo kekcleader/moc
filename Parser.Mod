@@ -328,17 +328,38 @@ RETURN assign END Assignment;
     {ELSIF expression THEN StatementSequence}
     [ELSE StatementSequence] END. *)
 PROCEDURE IfStatement(): Tree.Node;
-VAR ifNode, expr, statements: Tree.Node;
+VAR ifNode, elsifNode, tail, expr, statements: Tree.Node;
 BEGIN
   expr := Expression();
   Skip(S.then);
   statements := StatementSequence();
-  Skip(S.end);
 
   ifNode := Tree.NewNode(Tree.NIf);
   ifNode.left := expr;
   ifNode.right := statements;
+  tail := ifNode;
 
+  WHILE sym = S.elsif DO
+    S.Get(sym); (* elsif *)
+    expr := Expression();
+    Skip(S.then);
+    statements := StatementSequence();
+
+    elsifNode := Tree.NewNode(Tree.NIfElse);
+    elsifNode.left := expr;
+    elsifNode.right := statements;
+    tail.els := elsifNode;
+    tail := elsifNode
+  END;
+
+  IF Skipped(S.else) THEN
+    statements := StatementSequence();
+    elsifNode := Tree.NewNode(Tree.NIfElse);
+    elsifNode.right := statements;
+    tail.els := elsifNode
+  END;
+
+  Skip(S.end)
 RETURN ifNode END IfStatement;
 
 (** WhileStatement = WHILE expression DO StatementSequence

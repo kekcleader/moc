@@ -34,6 +34,7 @@ TYPE
   Node* = POINTER TO NodeDesc;
   NodeDesc* = RECORD
     left*, right*, link*: Node;
+    els*: Node;
     class*: INTEGER; (** See Node.class constants *)
     subclass*: INTEGER; (** See Node.subclass constants *)
     type*: T.Type;
@@ -135,6 +136,10 @@ BEGIN
     IF node.link # NIL THEN
       Indent(indent); Out.String('~ Link ~'); Out.Ln;
       Print(node.link, indent)
+    END;
+    IF node.els # NIL THEN
+      Indent(indent); Out.String('Else:'); Out.Ln;
+      Print(node.els, indent + 1)
     END
   END
 END Print;
