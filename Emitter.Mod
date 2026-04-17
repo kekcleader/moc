@@ -66,6 +66,23 @@ BEGIN
   END
 END Assign;
 
+(** INC(x) or DEC(x): increments or decrements variable x by 1 in place. *)
+PROCEDURE IncDec*(VAR x: Item; dec: BOOLEAN);
+BEGIN
+  IF x.mode # Abs THEN
+    Machine.NotImplemented('IncDec: only absolute variables supported')
+  END;
+  G.Adrp(16, 2);
+  IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
+  G.LdrH(0, 16);      (* Load into w0 *)
+  IF dec THEN G.SubImmH(0, 0, 1)
+  ELSE G.AddImmH(0, 0, 1)
+  END;
+  G.Adrp(16, 2);
+  IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
+  G.StrH(0, 16)       (* Store back *)
+END IncDec;
+
 PROCEDURE MonadicOp*(op: INTEGER; VAR x: Item);
 BEGIN
   Load(x);

@@ -105,6 +105,7 @@ RETURN object END Qualident;
 
 PROCEDURE ^ Expression(): Tree.Node;
 PROCEDURE ^ StatementSequence(): Tree.Node;
+PROCEDURE ^ StandProcCall(designator: Tree.Node): Tree.Node;
 
 (** designator = qualident {selector}.
      selector = "." ident | "[" ExpList "]" | "^" | "(" qualident ")". *)
@@ -407,10 +408,12 @@ RETURN repeatNode END RepeatStatement;
 PROCEDURE Statement(): Tree.Node;
 VAR statement, designator: Tree.Node;
 BEGIN
-  IF sym = S.ident THEN (* Assignment or procedure call *)
+  IF sym = S.ident THEN
     designator := Designator();
     IF Skipped(S.becomes) THEN
       statement := Assignment(designator)
+    ELSIF (designator.object # NIL) & (designator.object.class = Table.SProc) THEN
+      statement := StandProcCall(designator)
     ELSE
       statement := ProcedureCall(designator)
     END
@@ -447,6 +450,27 @@ BEGIN
     prev := statement
   END
 RETURN first END StatementSequence;
+
+(** Handles INC, DEC, INCL, EXCL and other standard procedures. *)
+PROCEDURE StandProcCall(designator: Tree.Node): Tree.Node;
+VAR call, args, argsLast, arg: Tree.Node;
+    proc: INTEGER;
+BEGIN
+  proc := designator.object.constVal.intVal;
+  Skip(S.lparen);
+  args := NIL; argsLast := NIL;
+  arg := Expression();
+  Builder.Link(args, argsLast, arg);
+  IF sym = S.comma THEN
+    S.Get(sym);
+    arg := Expression();
+    Builder.Link(args, argsLast, arg)
+  END;
+  Skip(S.rparen);
+  call := Tree.NewNode(Tree.NCall);
+  call.left := designator;
+  call.right := args
+RETURN call END StandProcCall;
 
 (** ConstExpression = expression. *)
 PROCEDURE ConstExpression(): Tree.Node;

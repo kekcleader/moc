@@ -110,7 +110,8 @@ BEGIN
         Machine.NotImplemented('this statement type')
       END
     ELSIF n.class = Tree.NCall THEN
-      IF n.left.object.class # Table.Const THEN
+      IF (n.left.object.class # Table.Const) &
+         (n.left.object.class # Table.SProc) THEN
         Machine.NotImplemented('procedure variable call');
       ELSE
         con := n.left.object.constVal;
@@ -119,6 +120,12 @@ BEGIN
         ELSIF con.intVal = -21 THEN
         Expression(n.right, x);
         E.OutInt(x)
+        ELSIF con.intVal = Table.incProc THEN
+          Expression(n.right, x);
+          E.IncDec(x, FALSE)
+        ELSIF con.intVal = Table.decProc THEN
+          Expression(n.right, x);
+          E.IncDec(x, TRUE)
         ELSE
           Machine.NotImplemented('this standard procedure call');
         END

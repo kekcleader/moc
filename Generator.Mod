@@ -150,6 +150,22 @@ BEGIN
   DWord(n)
 END AddImm;
 
+(** ADD w{r1}, w{r2}, #{imm} — 32-bit immediate *)
+PROCEDURE AddImmH*(r1, r2, imm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 11000000H + (imm MOD 1000H) * 400H + r2 * 20H + r1;
+  DWord(n)
+END AddImmH;
+
+(** SUB w{r1}, w{r2}, #{imm} — 32-bit immediate *)
+PROCEDURE SubImmH*(r1, r2, imm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 51000000H + (imm MOD 1000H) * 400H + r2 * 20H + r1;
+  DWord(n)
+END SubImmH;
+
 (** ADD w{r1}, w{r2}, w{r3} (32-bit, shifted register with 0 shift) *)
 PROCEDURE Add*(r1, r2, r3: INTEGER);
 VAR n: INTEGER;
