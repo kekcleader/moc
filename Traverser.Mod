@@ -182,10 +182,13 @@ BEGIN
       E.FixLink(x.a)         (* Resolve the loop exit address *)
     ELSIF n.class = Tree.NRepeat THEN
       loopStart := Generator.Here();
-      Statement(n.right);     (* Execute body first *)
+      Statement(n.right);
       Generator.ResetRH;
-      Expression(n.left, x);  (* Evaluate UNTIL condition *)
-      E.CBJump(x, loopStart)
+      Expression(n.left, x);
+      E.Not(x);          (* UNTIL condition: loop continues while NOT condition *)
+      E.CFJump(x);
+      E.BJump(loopStart);
+      E.FixLink(x.a)
     ELSE
       Machine.NotImplemented('this node class');
     END;

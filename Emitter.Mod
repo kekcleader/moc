@@ -191,18 +191,6 @@ BEGIN
   IF ODD(code) THEN DEC(code) ELSE INC(code) END
 RETURN code END Negated;
 
-(** Conditional Forward Jump (Jump conditionally IF and WHILE) *)
-PROCEDURE CFJump*(VAR x: Item);
-BEGIN
-  IF x.mode # Table.Const THEN Machine.NotImplemented('CFJump: expected condition code') END;
-
-  FixLink(x.b);
-  x.b := 0;
-
-  G.BCond(Negated(x.r), x.a);
-  x.a := G.Here() - 1
-END CFJump;
-
 (** Unconditional Forward Jump — chains into escape list for IF/ELSIF END *)
 PROCEDURE FJump*(VAR L: INTEGER);
 BEGIN
@@ -216,20 +204,21 @@ BEGIN
   G.B(L - G.Here())
 END BJump;
 
-(** Conditional backward jump for REPEAT...UNTIL.
-    Branches back to L when condition is FALSE.
-    Falls through when condition is TRUE. *)
-PROCEDURE CBJump*(VAR x: Item; L: INTEGER);
-VAR here: INTEGER;
+(** Conditional Forward Jump.
+    Emits B.cond(Negated) into false-list, fixes true-list to after the branch. *)
+PROCEDURE CFJump*(VAR x: Item);
+VAR saveB: INTEGER;
 BEGIN
   IF x.mode # Table.Const THEN
-    Machine.NotImplemented('CBJump: expected condition code')
+    Machine.NotImplemented('CFJump: expected condition code')
   END;
-  here := G.Here();
-  G.BCond(Negated(x.r), L - here);
-  FixLink(x.b);
-  FixLinkWith(x.a, L)
-END CBJump;
+  saveB := x.b;
+  x.b := 0;
+  G.BCond(Negated(x.r), x.a);
+  x.a := G.Here() - 1;
+  FixLink(saveB)
+END CFJump;
+
 
 (** Splices two B.cond chain lists into one.
     L1 and L2 are heads of chains (0 = empty). Returns merged head. *)
