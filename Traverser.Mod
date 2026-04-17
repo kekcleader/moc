@@ -57,26 +57,43 @@ BEGIN
     IF n.subclass = Tree.minus THEN
       E.MonadicOp(n.subclass, x);
       z := x
+    ELSIF n.subclass = Tree.not THEN
+      E.Not(x);
+      z := x
     ELSE
       Machine.NotImplemented('this monadic operator is not supported yet')
     END
   ELSIF n.class = Tree.NDyadic THEN
-    Expression(n.left, x);
-    E.Load(x);
-    Expression(n.right, y);
-    E.Load(y);
-    IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) OR
-       (n.subclass = Tree.times) OR (n.subclass = Tree.div) OR
-       (n.subclass = Tree.mod) THEN
-      E.Op(n.subclass, x, y);
+    IF n.subclass = Tree.and THEN
+      Expression(n.left, x);
+      E.And1(x);
+      Expression(n.right, y);
+      E.And2(x, y);
       z := x
-    ELSIF (n.subclass >= Tree.eql) & (n.subclass <= Tree.geq) THEN
-      E.CmpOp(n.subclass, x, y);
+    ELSIF n.subclass = Tree.or THEN
+      Expression(n.left, x);
+      E.Or1(x);
+      Expression(n.right, y);
+      E.Or2(x, y);
       z := x
     ELSE
-      Machine.NotImplemented('this dyadic operator is not supported yet')
+      (* Arithmetic and comparison — load both operands eagerly *)
+      Expression(n.left, x);
+      E.Load(x);
+      Expression(n.right, y);
+      E.Load(y);
+      IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) OR
+         (n.subclass = Tree.times) OR (n.subclass = Tree.div) OR
+         (n.subclass = Tree.mod) THEN
+        E.Op(n.subclass, x, y);
+        z := x
+      ELSIF (n.subclass >= Tree.eql) & (n.subclass <= Tree.geq) THEN
+        E.CmpOp(n.subclass, x, y);
+        z := x
+      ELSE
+        Machine.NotImplemented('this dyadic operator is not supported yet')
+      END
     END
-
   ELSIF n.class = Tree.NProc THEN
     Machine.NotImplemented('procedure expression')
   ELSE

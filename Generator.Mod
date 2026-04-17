@@ -379,6 +379,26 @@ BEGIN
   DWord(n)
 END B;
 
+(** Read a 32-bit word from code at address L (in words). *)
+PROCEDURE ReadWord*(L: INTEGER): INTEGER;
+VAR bytePos: INTEGER;
+BEGIN
+  bytePos := L * 4;
+RETURN code[bytePos] + code[bytePos+1]*100H +
+       code[bytePos+2]*10000H + code[bytePos+3]*1000000H
+END ReadWord;
+
+(** Write a 32-bit word into code at address L (in words). *)
+PROCEDURE WriteWord*(L, val: INTEGER);
+VAR bytePos: INTEGER;
+BEGIN
+  bytePos := L * 4;
+  code[bytePos]   := val MOD 100H;
+  code[bytePos+1] := (val DIV 100H) MOD 100H;
+  code[bytePos+2] := (val DIV 10000H) MOD 100H;
+  code[bytePos+3] := (val DIV 1000000H) MOD 100H
+END WriteWord;
+
 PROCEDURE IncRH*;
 BEGIN
   INC(RH)

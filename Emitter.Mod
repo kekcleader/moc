@@ -231,6 +231,81 @@ BEGIN
   FixLinkWith(x.a, L)
 END CBJump;
 
+(** Splices two B.cond chain lists into one.
+    L1 and L2 are heads of chains (0 = empty). Returns merged head. *)
+PROCEDURE MergeLists(L1, L2: INTEGER): INTEGER;
+VAR L, prevL, instr, cond: INTEGER;
+BEGIN
+  IF L1 = 0 THEN L1 := L2
+  ELSIF L2 # 0 THEN
+    (* Walk to the tail of L1: the entry whose imm19 = 0 *)
+    L := L1;
+    REPEAT prevL := L; L := G.ImmFromBCond(L) UNTIL L = 0;
+    (* Splice: patch tail of L1 to point to head of L2 *)
+    instr := G.ReadWord(prevL);
+    cond  := instr MOD 10H;
+    G.WriteWord(prevL, 54000000H + (L2 MOD 80000H) * 20H + cond)
+  END
+RETURN L1 END MergeLists;
+
+(** Converts x to a Cond item if it is not already.
+    Emits CMP against 0 for Reg/Abs items. *)
+PROCEDURE LoadCond*(VAR x: Item);
+BEGIN
+  IF x.mode # Table.Const THEN (* Not yet a condition code item *)
+    Load(x);                   (* Get into register *)
+    G.Cmp(x.r, 31);            (* CMP wX, wzr — test for non-zero *)
+    G.ResetRHTo(0);
+    x.mode := Table.Const;
+    x.r := G.NE;               (* NE = was non-zero = TRUE *)
+    x.a := 0; x.b := 0
+  END
+END LoadCond;
+
+(** NOT x: inverts condition code and swaps true/false lists. *)
+PROCEDURE Not*(VAR x: Item);
+VAR t: INTEGER;
+BEGIN
+  LoadCond(x);
+  x.r := Negated(x.r);
+  t := x.a; x.a := x.b; x.b := t
+END Not;
+
+(** x & — first half of AND. Emits conditional jump and chains false-list. *)
+PROCEDURE And1*(VAR x: Item);
+BEGIN
+  LoadCond(x);
+  CFJump(x)  (* Emits B.cond(Negated) chained into x.a, fixes x.b to here *)
+END And1;
+
+(** x & y — second half of AND. Merges false-lists, takes y's condition. *)
+PROCEDURE And2*(VAR x, y: Item);
+BEGIN
+  LoadCond(y);
+  x.a := MergeLists(y.a, x.a);  (* Both false → same exit *)
+  x.b := y.b;
+  x.r := y.r
+END And2;
+
+(** x OR — first half of OR. Emits conditional jump and chains true-list. *)
+PROCEDURE Or1*(VAR x: Item);
+BEGIN
+  LoadCond(x);
+  FixLink(x.a);          (* Fix false-list to here — false falls through to y *)
+  x.a := 0;
+  G.BCond(x.r, x.b);    (* B.cond(TRUE) → chain into true-list *)
+  x.b := G.Here() - 1
+END Or1;
+
+(** x OR y — second half of OR. Merges true-lists, takes y's condition. *)
+PROCEDURE Or2*(VAR x, y: Item);
+BEGIN
+  LoadCond(y);
+  x.b := MergeLists(y.b, x.b);  (* Both true → same exit *)
+  x.a := y.a;
+  x.r := y.r
+END Or2;
+
 PROCEDURE OutLn*;
 BEGIN
   G.MovImm( 0, 1);        (* stdout *)
