@@ -8,3 +8,4 @@ _Build
 /example
 /Tests
 test.sh
+.DS_Store
