@@ -6,3 +6,5 @@ _Build
 *.oh
 *.bak
 /example
+/Tests
+test.sh
