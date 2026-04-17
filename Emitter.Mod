@@ -199,6 +199,21 @@ BEGIN
   G.B(L - G.Here())
 END BJump;
 
+(** Conditional backward jump for REPEAT...UNTIL.
+    Branches back to L when condition is FALSE.
+    Falls through when condition is TRUE. *)
+PROCEDURE CBJump*(VAR x: Item; L: INTEGER);
+VAR here: INTEGER;
+BEGIN
+  IF x.mode # Table.Const THEN
+    Machine.NotImplemented('CBJump: expected condition code')
+  END;
+  here := G.Here();
+  G.BCond(Negated(x.r), L - here);
+  FixLink(x.b);
+  FixLinkWith(x.a, L)
+END CBJump;
+
 PROCEDURE OutLn*;
 BEGIN
   G.MovImm( 0, 1);        (* stdout *)

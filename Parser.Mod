@@ -390,11 +390,17 @@ BEGIN
 RETURN whileNode END WhileStatement;
 
 (** RepeatStatement = REPEAT StatementSequence UNTIL expression. *)
-PROCEDURE RepeatStatement(): Tree.Node;
-VAR repeat: Tree.Node;
-BEGIN
 
-RETURN repeat END RepeatStatement;
+PROCEDURE RepeatStatement(): Tree.Node;
+VAR repeatNode, body, cond: Tree.Node;
+BEGIN
+  body := StatementSequence();
+  Skip(S.until);
+  cond := Expression();
+  repeatNode := Tree.NewNode(Tree.NRepeat);
+  repeatNode.left := cond;
+  repeatNode.right := body
+RETURN repeatNode END RepeatStatement;
 
 (** statement = [assignment | ProcedureCall | IfStatement | CaseStatement |
     WhileStatement | RepeatStatement | ForStatement]. *)
@@ -414,8 +420,8 @@ BEGIN
     statement := WhileStatement()
   ELSIF sym = S.case THEN
     Machine.NotImplemented('case statement')
-  ELSIF sym = S.repeat THEN
-    Machine.NotImplemented('repeat statement')
+  ELSIF Skipped(S.repeat) THEN
+    statement := RepeatStatement()
   ELSIF sym = S.for THEN
     Machine.NotImplemented('for statement')
   END
