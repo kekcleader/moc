@@ -325,6 +325,52 @@ BEGIN
   assign.right := expr
 RETURN assign END Assignment;
 
+(** ForStatement = FOR ident ":=" expression TO expression
+    [BY ConstExpression] DO StatementSequence END. *)
+PROCEDURE ForStatement(): Tree.Node;
+VAR node: Tree.Node;
+  obj: Table.Object;
+  initExpr, endExpr, stepExpr, bodyNode: Tree.Node;
+  step: INTEGER;
+BEGIN
+  node := Builder.NewIntConst(0);
+  IF Check(S.ident) THEN
+    obj := Table.ThisObject(S.name);
+    S.Get(sym); (* ident *)
+    IF obj = NIL THEN
+      Machine.Error(Errors.undefinedIdent);
+      obj := dummy
+    END;
+    Skip(S.becomes);
+    initExpr := Expression();
+    Skip(S.to);
+    endExpr := Expression();
+    step := 1;
+    IF Skipped(S.by) THEN
+      stepExpr := Expression();
+      IF stepExpr.class # Tree.NConst THEN
+        Machine.Error(Errors.notConstant);
+        step := 1
+      ELSIF stepExpr.constVal.intVal = 0 THEN
+        Machine.Error(Errors.badDyadicOperands);
+        step := 1
+      ELSE
+        step := stepExpr.constVal.intVal
+      END
+    END;
+    Skip(S.do);
+    bodyNode := StatementSequence();
+    Skip(S.end);
+    node := Tree.NewNode(Tree.NFor);
+    node.object := obj;
+    node.left := initExpr;
+    node.right := bodyNode;
+    node.els := endExpr;
+    NEW(node.constVal);
+    node.constVal.intVal := step
+  END
+RETURN node END ForStatement;
+
 (** IfStatement = IF expression THEN StatementSequence
     {ELSIF expression THEN StatementSequence}
     [ELSE StatementSequence] END. *)
@@ -425,8 +471,8 @@ BEGIN
     Machine.NotImplemented('case statement')
   ELSIF Skipped(S.repeat) THEN
     statement := RepeatStatement()
-  ELSIF sym = S.for THEN
-    Machine.NotImplemented('for statement')
+  ELSIF Skipped(S.for) THEN
+    statement := ForStatement()
   END
 RETURN statement END Statement;
 

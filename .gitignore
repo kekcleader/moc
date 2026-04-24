@@ -7,5 +7,6 @@ _Build
 *.bak
 /example
 /Tests
+/InterOberon
 test.sh
 .DS_Store

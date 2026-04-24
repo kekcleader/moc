@@ -106,6 +106,8 @@ VAR x, y, z: E.Item;
   con: Table.ConstVal;
   loopStart, escapeList: INTEGER;
   node: Tree.Node;
+  step, savedConst, savedReg: INTEGER;
+  endVal: E.Item;
 BEGIN
   WHILE ~Machine.hadErrors & (n # NIL) DO
     Generator.ResetRH;
@@ -189,6 +191,44 @@ BEGIN
       E.CFJump(x);
       E.BJump(loopStart);
       E.FixLink(x.a)
+    ELSIF n.class = Tree.NFor THEN
+      step := n.constVal.intVal;
+      (* 1. Assign initial value to loop variable *)
+      Expression(n.left, x);
+      z.mode := E.Abs;
+      z.a    := n.object.address;
+      z.type := n.object.type;
+      z.node := NIL;
+      z.b    := 0; z.r := 0;
+      E.Assign(z, x);
+      Generator.ResetRH;
+      (* 2. Evaluate and save end value (constant or callee-saved register) *)
+      Expression(n.els, endVal);
+      E.ForSave(endVal, savedConst, savedReg);
+      Generator.ResetRH;
+      (* 3. Loop start label *)
+      loopStart := Generator.Here();
+      (* 4. Condition check: sets condition item x *)
+      E.ForCond(n.object, savedReg, savedConst, step, x);
+      (* 5. Conditional exit if condition is false *)
+      E.CFJump(x);
+      (* 6. Loop body *)
+      Statement(n.right);
+      Generator.ResetRH;
+      (* 7. Increment loop variable by step *)
+      z.mode := E.Abs;
+      z.a    := n.object.address;
+      z.type := n.object.type;
+      z.node := NIL;
+      z.b    := 0; z.r := 0;
+      E.IncDecStep(z, step);
+      Generator.ResetRH;
+      (* 8. Jump back to condition check *)
+      E.BJump(loopStart);
+      (* 9. Patch the exit jump to here *)
+      E.FixLink(x.a);
+      (* 10. Free callee-saved register if used *)
+      E.ForClean(savedReg)
     ELSE
       Machine.NotImplemented('this node class');
     END;

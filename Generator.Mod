@@ -303,6 +303,23 @@ BEGIN
   FOR i := 0 TO dataLen - 1 DO Files.Write(r, 0) END
 END OutputData;
 
+(** MOV x{rd}, x{rn} — encoded as ADD x{rd}, x{rn}, #0 (64-bit) *)
+PROCEDURE Mov*(rd, rn: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 11000000H + rn * 20H + rd;
+  n := -7FFFFFFFH - 1 + n; (* Set highest bit for sf=64-bit *)
+  DWord(n)
+END Mov;
+
+(** CMP w{rn}, #{imm} — encoded as SUBS wzr, w{rn}, #imm (32-bit) *)
+PROCEDURE CmpImm*(rn, imm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 71000000H + imm * 400H + rn * 20H + 1FH;
+  DWord(n)
+END CmpImm;
+
 (** CMP w{r1}, w{r2} (alias for SUBS wzr, w{r1}, w{r2}) *)
 PROCEDURE Cmp*(r1, r2: INTEGER);
 VAR n: INTEGER;

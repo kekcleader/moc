@@ -7,7 +7,8 @@ CONST
   NGuard*  =  5; NExpGuard* =  6; NConst*  =  7; NType*   =  8; NProc*   =  9;
   NUpTo*   = 10; NMonadic*  = 11; NDyadic* = 12; NCall*   = 13; NInitTD* = 14;
   NIf*     = 15; NCaseElse* = 16; NCaseDo* = 17; NEnter*  = 18; NAssign* = 19;
-  NIfElse* = 20; NCase*     = 21; NWhile*  = 22; NRepeat* = 23; NTrap*   = 28;
+  NIfElse* = 20; NCase*     = 21; NWhile*  = 22; NRepeat* = 23; NFor*    = 24;
+  NTrap*   = 28;
   NFixup*  = 31;
 
   (** Node.subclass values **)
@@ -77,6 +78,7 @@ BEGIN
   ELSIF node.class = NCase     THEN Out.String('NCase')
   ELSIF node.class = NWhile    THEN Out.String('NWhile')
   ELSIF node.class = NRepeat   THEN Out.String('NRepeat')
+  ELSIF node.class = NFor      THEN Out.String('NFor')
   ELSIF node.class = NTrap     THEN Out.String('NTrap')
   ELSIF node.class = NFixup    THEN Out.String('NFixup')
   ELSE Out.String('UNKNOWN')

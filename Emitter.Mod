@@ -6,6 +6,9 @@ CONST
   Abs* = 20;
   Reg* = 21;
 
+  firstCSReg = 19; (** First callee-saved register (x19) *)
+  maxCSReg   = 28; (** Last callee-saved register (x28) *)
+
 
 TYPE
   Item* = RECORD
@@ -17,6 +20,7 @@ TYPE
 
 VAR
   scratchOffset: INTEGER;
+  SH: INTEGER; (** Next free callee-saved register (x19..x28) *)
 
 PROCEDURE Print*(x: Item);
 BEGIN
@@ -67,6 +71,22 @@ BEGIN
 END Assign;
 
 (** INC(x) or DEC(x): increments or decrements variable x by 1 in place. *)
+(** Allocate the next callee-saved register for long-lived values (e.g. FOR end value). *)
+PROCEDURE AllocS(): INTEGER;
+VAR r: INTEGER;
+BEGIN
+  r := SH;
+  IF SH <= maxCSReg THEN INC(SH)
+  ELSE Machine.Error(Errors.outOfMemory)
+  END
+RETURN r END AllocS;
+
+(** Free the last allocated callee-saved register. *)
+PROCEDURE FreeS;
+BEGIN
+  IF SH > firstCSReg THEN DEC(SH) END
+END FreeS;
+
 PROCEDURE IncDec*(VAR x: Item; dec: BOOLEAN);
 BEGIN
   IF x.mode # Abs THEN
@@ -82,6 +102,31 @@ BEGIN
   IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
   G.StrH(0, 16)       (* Store back *)
 END IncDec;
+
+(** Increment or decrement variable x by a constant step in place.
+    step > 0: increment; step < 0: decrement.
+    x must be in Abs mode (global variable). *)
+PROCEDURE IncDecStep*(VAR x: Item; step: INTEGER);
+BEGIN
+  IF x.mode # Abs THEN
+    Machine.NotImplemented('IncDecStep: only absolute mode supported')
+  END;
+  G.Adrp(16, 2);
+  IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
+  G.LdrH(0, 16);
+  IF step > 0 THEN
+    IF step < 1000H THEN G.AddImmH(0, 0, step)
+    ELSE G.MovHImm(1, step); G.Add(0, 0, 1)
+    END
+  ELSE
+    IF -step < 1000H THEN G.SubImmH(0, 0, -step)
+    ELSE G.MovHImm(1, -step); G.Sub(0, 0, 1)
+    END
+  END;
+  G.Adrp(16, 2);
+  IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
+  G.StrH(0, 16)
+END IncDecStep;
 
 PROCEDURE MonadicOp*(op: INTEGER; VAR x: Item);
 BEGIN
@@ -305,6 +350,59 @@ BEGIN
   G.Svc(0)
 END OutLn;
 
+(** Save the FOR loop end value before the loop starts.
+    If endVal is a constant, stores it in savedConst and sets endReg = -1.
+    Otherwise loads it into a callee-saved register (endReg). *)
+PROCEDURE ForSave*(VAR endVal: Item; VAR savedConst: INTEGER; VAR endReg: INTEGER);
+BEGIN
+  IF endVal.mode = Table.Const THEN
+    savedConst := endVal.a;
+    endReg := -1
+  ELSE
+    Load(endVal);
+    endReg := AllocS();
+    G.Mov(endReg, endVal.r);
+    G.DecRH
+  END
+END ForSave;
+
+(** Generate the FOR loop condition check.
+    step > 0: loop continues while loopVar <= end (exits on GT).
+    step < 0: loop continues while loopVar >= end (exits on LT).
+    Result x is a condition item ready for CFJump. *)
+PROCEDURE ForCond*(obj: Table.Object; endReg, endConst, step: INTEGER; VAR x: Item);
+VAR loopVar: Item;
+BEGIN
+  loopVar.mode := Abs;
+  loopVar.a    := obj.address;
+  loopVar.type := obj.type;
+  loopVar.node := NIL;
+  loopVar.b    := 0;
+  loopVar.r    := 0;
+  Load(loopVar);
+  IF endReg = -1 THEN (* constant end value *)
+    IF (endConst >= 0) & (endConst < 1000H) THEN
+      G.CmpImm(loopVar.r, endConst)
+    ELSE
+      G.MovHImm(G.RH, endConst);
+      G.Cmp(loopVar.r, G.RH)
+    END
+  ELSE (* non-constant: saved in callee-saved register *)
+    G.Cmp(loopVar.r, endReg)
+  END;
+  G.ResetRHTo(0);
+  IF step > 0 THEN x.r := G.LE ELSE x.r := G.GE END;
+  x.mode := Table.Const;
+  x.a    := 0;
+  x.b    := 0
+END ForCond;
+
+(** Free the callee-saved register used by ForSave, if any. *)
+PROCEDURE ForClean*(endReg: INTEGER);
+BEGIN
+  IF endReg # -1 THEN FreeS END
+END ForClean;
+
 PROCEDURE SetScratchOffset*(offset: INTEGER);
 BEGIN
   scratchOffset := offset
@@ -326,11 +424,15 @@ END OutInt;
 
 PROCEDURE Enter*;
 BEGIN
+  SH := firstCSReg
 END Enter;
 
 PROCEDURE Exit*;
 BEGIN
   G.Exit
 END Exit;
+
+BEGIN
+  SH := firstCSReg
 
 END Emitter.

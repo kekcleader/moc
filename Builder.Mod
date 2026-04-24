@@ -90,7 +90,8 @@ BEGIN
       ELSE
         Machine.Error(Errors.badMonadicOperand)
       END
-    END
+    END;
+    mondaic := x  (* Return the modified constant node, not uninitialized mondaic *)
   ELSE
     mondaic := Tree.NewNode(Tree.NMonadic);
     (* Mapping unary operations *)
