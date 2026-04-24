@@ -128,6 +128,86 @@ BEGIN
   G.StrH(0, 16)
 END IncDecStep;
 
+(** ABS(x): absolute value.
+    For constants: folds at compile time.
+    For register/variable: loads, compares with 0, conditionally negates. *)
+PROCEDURE AbsVal*(VAR x: Item);
+BEGIN
+  IF x.mode = Table.Const THEN
+    IF x.a < 0 THEN x.a := -x.a END
+  ELSE
+    Load(x);
+    G.CmpImm(x.r, 0);
+    G.CSNeg(x.r, x.r, x.r, G.GE)
+  END
+END AbsVal;
+
+(** ODD(x): returns 1 if x is odd, 0 if even.
+    Always loads into a register (no constant folding) to avoid mode confusion
+    between constant values and condition codes. Result is in Reg mode (0 or 1). *)
+PROCEDURE OddVal*(VAR x: Item);
+BEGIN
+  Load(x);
+  G.AndImm1(x.r, x.r)
+END OddVal;
+
+(** ASR(x, y): arithmetic shift right x by y bits. *)
+PROCEDURE AsrVal*(VAR x, y: Item);
+BEGIN
+  IF (x.mode = Table.Const) & (y.mode = Table.Const) THEN
+    x.a := ASR(x.a, y.a)
+  ELSE
+    Load(x); Load(y);
+    G.Asr(x.r, x.r, y.r);
+    G.DecRH
+  END
+END AsrVal;
+
+(** LSL(x, y): logical shift left x by y bits. *)
+PROCEDURE LslVal*(VAR x, y: Item);
+BEGIN
+  IF (x.mode = Table.Const) & (y.mode = Table.Const) THEN
+    x.a := LSL(x.a, y.a)
+  ELSE
+    Load(x); Load(y);
+    G.Lsl(x.r, x.r, y.r);
+    G.DecRH
+  END
+END LslVal;
+
+(** ROR(x, y): rotate right x by y bits. *)
+PROCEDURE RorVal*(VAR x, y: Item);
+BEGIN
+  IF (x.mode = Table.Const) & (y.mode = Table.Const) THEN
+    x.a := ROR(x.a, y.a)
+  ELSE
+    Load(x); Load(y);
+    G.Ror(x.r, x.r, y.r);
+    G.DecRH
+  END
+END RorVal;
+
+(** INC(x, n) or DEC(x, n): increment or decrement variable x by amount n.
+    Works for both constant and variable amounts.
+    x must be in Abs mode. Uses registers 0 (amount) and 1 (variable value).
+    Precondition: G.RH = 0. *)
+PROCEDURE IncDecByAmount*(VAR x, n: Item; dec: BOOLEAN);
+BEGIN
+  IF x.mode # Abs THEN
+    Machine.NotImplemented('IncDecByAmount: only absolute mode supported')
+  END;
+  Load(n);           (* amount in register 0, G.RH = 1 *)
+  G.Adrp(16, 2);
+  IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
+  G.LdrH(1, 16);     (* load variable value into register 1 *)
+  IF dec THEN G.Sub(0, 1, 0)   (* w0 = w1 - w0 = value - amount *)
+  ELSE        G.Add(0, 1, 0)   (* w0 = w1 + w0 = value + amount *)
+  END;
+  G.Adrp(16, 2);
+  IF x.a # 0 THEN G.AddImm(16, 16, x.a) END;
+  G.StrH(0, 16)      (* store result back *)
+END IncDecByAmount;
+
 PROCEDURE MonadicOp*(op: INTEGER; VAR x: Item);
 BEGIN
   Load(x);

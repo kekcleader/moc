@@ -112,21 +112,39 @@ BEGIN
   *)
 END DummyCode;
 
-(** MOV x{r}, #{imm} *)
+(** MOV x{r}, #{imm} — 64-bit immediate load.
+    positive/zero: MOVZ Xr, #imm16 (opc=10, base=D2800000H)
+    negative:      MOVN Xr, #(~imm & FFFFH) (opc=00, base=92800000H) *)
 PROCEDURE MovImm*(r, imm: INTEGER);
 VAR n: INTEGER;
 BEGIN
-  n := (294H * 10000H + imm MOD 10000H) * 20H + r;
-  n := -7FFFFFFFH - 1 + n; (* Set highest bit for 64-bit *)
+  IF imm >= 0 THEN
+    (* MOVZ Xr, #imm16: 64-bit, base = D2800000H *)
+    n := (294H * 10000H + imm MOD 10000H) * 20H + r;
+    n := -7FFFFFFFH - 1 + n  (* set sf=1 *)
+  ELSE
+    (* MOVN Xr, #(~imm & FFFFH): 64-bit, base = 92800000H.
+       Valid range: -65536 <= imm < 0.  Larger negatives need MOVN+MOVK. *)
+    n := (94H * 10000H + (-imm - 1) MOD 10000H) * 20H + r;
+    n := -7FFFFFFFH - 1 + n  (* set sf=1 *)
+  END;
   DWord(n)
 END MovImm;
 
-(** MOV w{r}, #{imm} *)
+(** MOV w{r}, #{imm} — 32-bit immediate load.
+    positive/zero: MOVZ Wr, #imm16 (opc=10, base=52800000H)
+    negative:      MOVN Wr, #(~imm & FFFFH) (opc=00, base=12800000H) *)
 PROCEDURE MovHImm*(r, imm: INTEGER);
 VAR n: INTEGER;
 BEGIN
-  n := (294H * 10000H + imm MOD 10000H) * 20H + r;
-  (* Keep highest bit 0 for 32-bit operand *)
+  IF imm >= 0 THEN
+    (* MOVZ Wr, #imm16: 32-bit, base = 52800000H *)
+    n := (294H * 10000H + imm MOD 10000H) * 20H + r
+  ELSE
+    (* MOVN Wr, #(~imm & FFFFH): 32-bit, base = 12800000H.
+       Valid range: -65536 <= imm < 0.  Larger negatives need MOVN+MOVK. *)
+    n := (94H * 10000H + (-imm - 1) MOD 10000H) * 20H + r
+  END;
   DWord(n)
 END MovHImm;
 
@@ -319,6 +337,49 @@ BEGIN
   n := 71000000H + imm * 400H + rn * 20H + 1FH;
   DWord(n)
 END CmpImm;
+
+(** AND x{rd}, x{rn}, #1 — 64-bit AND with immediate 1 (bitmask) *)
+PROCEDURE AndImm1*(rd, rn: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 12400000H + rn * 20H + rd;
+  n := -7FFFFFFFH - 1 + n; (* Set highest bit for 64-bit *)
+  DWord(n)
+END AndImm1;
+
+(** CSNEG x{rd}, x{rn}, x{rm}, cond — 64-bit conditional select negation:
+    rd := (cond) ? rn : -rm *)
+PROCEDURE CSNeg*(rd, rn, rm, cond: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 5A800400H + rm * 10000H + cond * 1000H + rn * 20H + rd;
+  n := -7FFFFFFFH - 1 + n; (* Set highest bit for 64-bit *)
+  DWord(n)
+END CSNeg;
+
+(** ASRV w{rd}, w{rn}, w{rm} — 32-bit arithmetic shift right (variable) *)
+PROCEDURE Asr*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 1AC02800H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END Asr;
+
+(** LSLV w{rd}, w{rn}, w{rm} — 32-bit logical shift left (variable) *)
+PROCEDURE Lsl*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 1AC02000H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END Lsl;
+
+(** RORV w{rd}, w{rn}, w{rm} — 32-bit rotate right (variable) *)
+PROCEDURE Ror*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 1AC02C00H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END Ror;
 
 (** CMP w{r1}, w{r2} (alias for SUBS wzr, w{r1}, w{r2}) *)
 PROCEDURE Cmp*(r1, r2: INTEGER);

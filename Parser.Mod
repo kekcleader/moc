@@ -73,10 +73,7 @@ BEGIN
   IF ok THEN S.Get(sym) END
 RETURN ok END Skipped;
 
-PROCEDURE StandardProcedureCall(x: Tree.Node): Tree.Node;
-BEGIN
-  Machine.NotImplemented('standard procedure call')
-RETURN x END StandardProcedureCall;
+
 
 (** qualident = [ident "."] ident. *)
 PROCEDURE Qualident(): Table.Object;
@@ -106,6 +103,7 @@ RETURN object END Qualident;
 PROCEDURE ^ Expression(): Tree.Node;
 PROCEDURE ^ StatementSequence(): Tree.Node;
 PROCEDURE ^ StandProcCall(designator: Tree.Node): Tree.Node;
+PROCEDURE ^ StandardProcedureCall(x: Tree.Node): Tree.Node;
 
 (** designator = qualident {selector}.
      selector = "." ident | "[" ExpList "]" | "^" | "(" qualident ")". *)
@@ -312,6 +310,30 @@ BEGIN
     Machine.NotImplemented('operator IS')
   END
 RETURN x END Expression;
+
+(** StandardProcedureCall = ident "(" [expression {"," expression}] ")".
+    Precondition: x is the function designator (NProc, SFunc class).
+    Builds and returns an NCall node with arguments as a linked list. *)
+PROCEDURE StandardProcedureCall(x: Tree.Node): Tree.Node;
+VAR call, args, argsLast, arg: Tree.Node;
+BEGIN
+  args := NIL; argsLast := NIL;
+  Skip(S.lparen);
+  IF sym # S.rparen THEN
+    arg := Expression();
+    Builder.Link(args, argsLast, arg);
+    WHILE Skipped(S.comma) DO
+      arg := Expression();
+      Builder.Link(args, argsLast, arg)
+    END
+  END;
+  Skip(S.rparen);
+  call := Tree.NewNode(Tree.NCall);
+  call.left := x;
+  call.right := args;
+  call.type := x.type  (* return type of the standard function *)
+RETURN call END StandardProcedureCall;
+
 
 (** assignment = designator ":=" expression.
      Precondition: designator and ":=" already read. *)

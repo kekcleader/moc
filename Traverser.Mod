@@ -39,7 +39,7 @@ END Designator;
 
 PROCEDURE Expression(n: Tree.Node; VAR z: E.Item);
 VAR x, y: E.Item;
-  f: INTEGER;
+  f, proc: INTEGER;
   const: Table.ConstVal;
   type: Table.Type;
 BEGIN
@@ -94,6 +94,42 @@ BEGIN
         Machine.NotImplemented('this dyadic operator is not supported yet')
       END
     END
+  ELSIF n.class = Tree.NCall THEN
+    (* Standard function call in expression context *)
+    IF n.left.object.class = Table.SFunc THEN
+      proc := n.left.object.constVal.intVal;
+      IF proc = Table.absFunc THEN
+        Expression(n.right, x);
+        E.AbsVal(x);
+        z := x
+      ELSIF proc = Table.oddFunc THEN
+        Expression(n.right, x);
+        E.OddVal(x);
+        z := x
+      ELSIF proc = Table.asrFunc THEN
+        Expression(n.right, x);
+        Expression(n.right.link, y);
+        E.AsrVal(x, y);
+        z := x
+      ELSIF proc = Table.lslFunc THEN
+        Expression(n.right, x);
+        Expression(n.right.link, y);
+        E.LslVal(x, y);
+        z := x
+      ELSIF proc = Table.rorFunc THEN
+        Expression(n.right, x);
+        Expression(n.right.link, y);
+        E.RorVal(x, y);
+        z := x
+      ELSIF (proc = Table.ordFunc) OR (proc = Table.chrFunc) THEN
+        Expression(n.right, x); (* ORD/CHR: type cast, no code change *)
+        z := x
+      ELSE
+        Machine.NotImplemented('this standard function')
+      END
+    ELSE
+      Machine.NotImplemented('function call in expression')
+    END
   ELSIF n.class = Tree.NProc THEN
     Machine.NotImplemented('procedure expression')
   ELSE
@@ -141,10 +177,20 @@ BEGIN
         E.OutInt(x)
         ELSIF con.intVal = Table.incProc THEN
           Expression(n.right, x);
-          E.IncDec(x, FALSE)
+          IF n.right.link = NIL THEN
+            E.IncDec(x, FALSE)        (* INC(x) *)
+          ELSE
+            Expression(n.right.link, y);
+            E.IncDecByAmount(x, y, FALSE) (* INC(x, n) *)
+          END
         ELSIF con.intVal = Table.decProc THEN
           Expression(n.right, x);
-          E.IncDec(x, TRUE)
+          IF n.right.link = NIL THEN
+            E.IncDec(x, TRUE)         (* DEC(x) *)
+          ELSE
+            Expression(n.right.link, y);
+            E.IncDecByAmount(x, y, TRUE) (* DEC(x, n) *)
+          END
         ELSE
           Machine.NotImplemented('this standard procedure call');
         END
@@ -155,6 +201,7 @@ BEGIN
       WHILE node # NIL DO
         IF node.class = Tree.NIf THEN
           Expression(node.left, x);
+          E.LoadCond(x);
           E.CFJump(x);
           Statement(node.right);
           E.FJump(escapeList);
@@ -163,6 +210,7 @@ BEGIN
         ELSIF node.class = Tree.NIfElse THEN
           IF node.left # NIL THEN
             Expression(node.left, x);
+            E.LoadCond(x);
             E.CFJump(x);
             Statement(node.right);
             E.FJump(escapeList);
@@ -178,6 +226,7 @@ BEGIN
     ELSIF n.class = Tree.NWhile THEN
       loopStart := Generator.Here();
       Expression(n.left, x);
+      E.LoadCond(x);
       E.CFJump(x);           (* Jump out of loop if condition is false *)
       Statement(n.right);
       E.BJump(loopStart);    (* Jump back to condition evaluation *)
@@ -188,6 +237,7 @@ BEGIN
       Generator.ResetRH;
       Expression(n.left, x);
       E.Not(x);          (* UNTIL condition: loop continues while NOT condition *)
+      E.LoadCond(x);
       E.CFJump(x);
       E.BJump(loopStart);
       E.FixLink(x.a)
