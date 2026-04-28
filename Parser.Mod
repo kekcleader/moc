@@ -305,7 +305,9 @@ BEGIN
     y := SimpleExpression();
     x := Builder.DyadicOperator(relation, x, y)
   ELSIF sym = S.in THEN
-    Machine.NotImplemented('operator IN')
+    S.Get(sym);
+    y := SimpleExpression();
+    x := Builder.DyadicOperator(S.in, x, y)
   ELSIF sym = S.is THEN
     Machine.NotImplemented('operator IS')
   END

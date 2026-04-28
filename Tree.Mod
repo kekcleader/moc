@@ -28,6 +28,7 @@ CONST
   gtr*   = 21;
   geq*   = 22;
   not*   = 23;
+  in*    = 24;
 
 TYPE
   Ident = Scanner.Ident;
@@ -101,6 +102,7 @@ BEGIN
   ELSIF op = gtr THEN Out.String('>')
   ELSIF op = geq THEN Out.String('>=')
   ELSIF op = not THEN Out.String('~')
+  ELSIF op = in THEN Out.String('IN')
   ELSE
     Out.String('op('); Out.Int(op, 0); Out.Char(')')
   END

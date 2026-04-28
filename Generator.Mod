@@ -381,6 +381,54 @@ BEGIN
   DWord(n)
 END Ror;
 
+(** ORR w{rd}, w{rn}, w{rm} *)
+PROCEDURE Orr*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 2A000000H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END Orr;
+
+(** AND w{rd}, w{rn}, w{rm} *)
+PROCEDURE And*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 0A000000H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END And;
+
+(** EOR w{rd}, w{rn}, w{rm} *)
+PROCEDURE Eor*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 4A000000H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END Eor;
+
+(** BIC w{rd}, w{rn}, w{rm} = w{rn} AND NOT w{rm} *)
+PROCEDURE Bic*(rd, rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 0A200000H + rm * 10000H + rn * 20H + rd;
+  DWord(n)
+END Bic;
+
+(** MVN w{rd}, w{rm} = NOT w{rm} *)
+PROCEDURE Mvn*(rd, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 2A2003E0H + rm * 10000H + rd;
+  DWord(n)
+END Mvn;
+
+(** TST w{rn}, w{rm} = ANDS wzr, w{rn}, w{rm} *)
+PROCEDURE Tst*(rn, rm: INTEGER);
+VAR n: INTEGER;
+BEGIN
+  n := 6A00001FH + rm * 10000H + rn * 20H;
+  DWord(n)
+END Tst;
+
 (** CMP w{r1}, w{r2} (alias for SUBS wzr, w{r1}, w{r2}) *)
 PROCEDURE Cmp*(r1, r2: INTEGER);
 VAR n: INTEGER;

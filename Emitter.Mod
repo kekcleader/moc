@@ -55,7 +55,7 @@ END Load;
 
 PROCEDURE Assign*(VAR z, x: Item);
 BEGIN
-  IF z.type.form # Table.Int THEN
+  IF (z.type.form # Table.Int) & (z.type.form # Table.Set) THEN
     Machine.NotImplemented('assignment to a non-INTEGER')
   END;
   Load(x);
@@ -186,6 +186,109 @@ BEGIN
     G.DecRH
   END
 END RorVal;
+
+(** {x} *)
+PROCEDURE Singleton*(VAR x: Item);
+BEGIN
+  IF x.mode = Table.Const THEN
+    x.a := LSL(1, x.a)
+  ELSE
+    Load(x);
+    G.MovHImm(16, 1);
+    G.Lsl(x.r, 16, x.r)
+  END
+END Singleton;
+
+(** x + y : set union *)
+PROCEDURE SetUnion*(VAR x, y: Item);
+BEGIN
+  Load(x); Load(y);
+  G.Orr(x.r, x.r, y.r);
+  G.DecRH
+END SetUnion;
+
+(** x - y : set difference *)
+PROCEDURE SetDiff*(VAR x, y: Item);
+BEGIN
+  Load(x); Load(y);
+  G.Bic(x.r, x.r, y.r);
+  G.DecRH
+END SetDiff;
+
+(** x * y : set intersection *)
+PROCEDURE SetInter*(VAR x, y: Item);
+BEGIN
+  Load(x); Load(y);
+  G.And(x.r, x.r, y.r);
+  G.DecRH
+END SetInter;
+
+(** x / y : symmetric difference *)
+PROCEDURE SetSymDiff*(VAR x, y: Item);
+BEGIN
+  Load(x); Load(y);
+  G.Eor(x.r, x.r, y.r);
+  G.DecRH
+END SetSymDiff;
+
+(** -x : set complement *)
+PROCEDURE SetComplement*(VAR x: Item);
+BEGIN
+  Load(x);
+  G.Mvn(x.r, x.r)
+END SetComplement;
+
+(** x IN y *)
+PROCEDURE InSet*(VAR x, y: Item);
+BEGIN
+  Load(x); Load(y);
+  G.MovHImm(16, 1);
+  G.Lsl(x.r, 16, x.r);
+  G.Tst(y.r, x.r);
+  G.ResetRHTo(0);
+  x.mode := Table.Const;
+  x.r := G.NE;
+  x.a := 0;
+  x.b := 0
+END InSet;
+
+(** INCL(s, x) / EXCL(s, x) for absolute set variables *)
+PROCEDURE InclExclVar*(VAR s, x: Item; excl: BOOLEAN);
+VAR addr: INTEGER;
+BEGIN
+  IF s.mode # Abs THEN
+    Machine.NotImplemented('InclExclVar: only absolute set variables supported')
+  END;
+
+  addr := s.a;
+  Load(s);  (* current set value in register *)
+
+  IF x.mode = Table.Const THEN
+    G.MovHImm(16, 1);
+    G.MovHImm(17, x.a);
+    G.Lsl(16, 16, 17);
+    IF excl THEN
+      G.Bic(s.r, s.r, 16)
+    ELSE
+      G.Orr(s.r, s.r, 16)
+    END
+  ELSE
+    Load(x);
+    G.MovHImm(16, 1);
+    G.Lsl(x.r, 16, x.r);
+    IF excl THEN
+      G.Bic(s.r, s.r, x.r)
+    ELSE
+      G.Orr(s.r, s.r, x.r)
+    END;
+    G.DecRH
+  END;
+
+  G.Adrp(16, 2);
+  IF addr # 0 THEN G.AddImm(16, 16, addr) END;
+  G.StrH(s.r, 16);
+  G.DecRH
+END InclExclVar;
 
 (** INC(x, n) or DEC(x, n): increment or decrement variable x by amount n.
     Works for both constant and variable amounts.

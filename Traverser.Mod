@@ -85,10 +85,22 @@ BEGIN
       IF (n.subclass = Tree.plus) OR (n.subclass = Tree.minus) OR
          (n.subclass = Tree.times) OR (n.subclass = Tree.div) OR
          (n.subclass = Tree.mod) THEN
-        E.Op(n.subclass, x, y);
+        IF n.left.type.form = Table.Set THEN
+          IF    n.subclass = Tree.plus  THEN E.SetUnion(x, y)
+          ELSIF n.subclass = Tree.minus THEN E.SetDiff(x, y)
+          ELSIF n.subclass = Tree.times THEN E.SetInter(x, y)
+          ELSIF n.subclass = Tree.div   THEN E.SetSymDiff(x, y)
+          ELSE Machine.NotImplemented('this set operator')
+          END
+        ELSE
+          E.Op(n.subclass, x, y)
+        END;
         z := x
       ELSIF (n.subclass >= Tree.eql) & (n.subclass <= Tree.geq) THEN
         E.CmpOp(n.subclass, x, y);
+        z := x
+      ELSIF n.subclass = Tree.in THEN
+        E.InSet(x, y);
         z := x
       ELSE
         Machine.NotImplemented('this dyadic operator is not supported yet')
@@ -191,6 +203,14 @@ BEGIN
             Expression(n.right.link, y);
             E.IncDecByAmount(x, y, TRUE) (* DEC(x, n) *)
           END
+        ELSIF con.intVal = Table.inclProc THEN
+          Expression(n.right, x);
+          Expression(n.right.link, y);
+          E.InclExclVar(x, y, FALSE)
+        ELSIF con.intVal = Table.exclProc THEN
+          Expression(n.right, x);
+          Expression(n.right.link, y);
+          E.InclExclVar(x, y, TRUE)
         ELSE
           Machine.NotImplemented('this standard procedure call');
         END

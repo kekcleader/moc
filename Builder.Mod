@@ -222,6 +222,8 @@ BEGIN
       k := Tree.gtr
     ELSIF op = S.geq THEN
       k := Tree.geq
+    ELSIF op = S.in THEN        (* ← добавить это *)
+      k := Tree.in
     ELSE
       Machine.NotImplemented('this dyadic operator')
     END;
