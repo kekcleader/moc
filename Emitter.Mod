@@ -591,6 +591,57 @@ BEGIN
   scratchOffset := offset
 END SetScratchOffset;
 
+(** Load CASE expression into a register and keep it there for comparisons. *)
+PROCEDURE CaseSave*(VAR x: Item);
+BEGIN
+  Load(x)
+  (* x.mode = Reg, x.r holds the register with the selector value *)
+END CaseSave;
+
+(** Compare selector register with a single constant value.
+    On match, branch is chained into matchList. *)
+PROCEDURE CaseLabel*(VAR x: Item; val: INTEGER; VAR matchList: INTEGER);
+BEGIN
+  IF (val >= 0) & (val < 1000H) THEN
+    G.CmpImm(x.r, val)
+  ELSE
+    G.MovHImm(G.RH, val);
+    G.Cmp(x.r, G.RH)
+  END;
+  G.BCond(G.EQ, matchList);
+  matchList := G.Here() - 1
+END CaseLabel;
+
+(** Compare selector register with a range [lo..hi].
+    On match, branch is chained into matchList. *)
+PROCEDURE CaseRangeLabel*(VAR x: Item; lo, hi: INTEGER; VAR matchList: INTEGER);
+VAR skipPos: INTEGER;
+BEGIN
+  IF (lo >= 0) & (lo < 1000H) THEN
+    G.CmpImm(x.r, lo)
+  ELSE
+    G.MovHImm(G.RH, lo);
+    G.Cmp(x.r, G.RH)
+  END;
+  skipPos := G.Here();
+  G.BCond(G.LT, 0);         (* skip if selector < lo *)
+  IF (hi >= 0) & (hi < 1000H) THEN
+    G.CmpImm(x.r, hi)
+  ELSE
+    G.MovHImm(G.RH, hi);
+    G.Cmp(x.r, G.RH)
+  END;
+  G.BCond(G.LE, matchList); (* match if selector <= hi *)
+  matchList := G.Here() - 1;
+  G.PatchBCond(skipPos, G.Here())
+END CaseRangeLabel;
+
+(** Free the selector register at the end of the CASE statement. *)
+PROCEDURE CaseClean*(VAR x: Item);
+BEGIN
+  G.ResetRHTo(0)
+END CaseClean;
+
 PROCEDURE OutInt*(VAR x: Item);
 BEGIN
   Load(x);

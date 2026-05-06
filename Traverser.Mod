@@ -156,6 +156,8 @@ VAR x, y, z: E.Item;
   node: Tree.Node;
   step, savedConst, savedReg: INTEGER;
   endVal: E.Item;
+  doNode, label: Tree.Node;
+  matchList, exitList: INTEGER;
 BEGIN
   WHILE ~Machine.hadErrors & (n # NIL) DO
     Generator.ResetRH;
@@ -299,6 +301,38 @@ BEGIN
       E.FixLink(x.a);
       (* 10. Free callee-saved register if used *)
       E.ForClean(savedReg)
+    ELSIF n.class = Tree.NCase THEN
+      exitList := 0;
+      Expression(n.left, x);
+      E.CaseSave(x);
+      doNode := n.right;
+      WHILE doNode # NIL DO
+        matchList := 0;
+        label := doNode.left;
+        WHILE label # NIL DO
+          IF label.class = Tree.NUpTo THEN
+            E.CaseRangeLabel(x, label.left.constVal.intVal,
+                                label.right.constVal.intVal, matchList)
+          ELSE
+            E.CaseLabel(x, label.constVal.intVal, matchList)
+          END;
+          label := label.link
+        END;
+        (* No match: jump over this body to the next branch *)
+        loopStart := 0;
+        E.FJump(loopStart);
+        (* Patch match jumps to body entry *)
+        E.FixLink(matchList);
+        Statement(doNode.right);
+        Generator.ResetRH;
+        (* After body: jump past whole CASE *)
+        E.FJump(exitList);
+        (* Next branch starts here *)
+        E.FixLink(loopStart);
+        doNode := doNode.link
+      END;
+      E.CaseClean(x);
+      E.FixLink(exitList)
     ELSE
       Machine.NotImplemented('this node class');
     END;

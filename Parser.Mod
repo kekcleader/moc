@@ -104,6 +104,7 @@ PROCEDURE ^ Expression(): Tree.Node;
 PROCEDURE ^ StatementSequence(): Tree.Node;
 PROCEDURE ^ StandProcCall(designator: Tree.Node): Tree.Node;
 PROCEDURE ^ StandardProcedureCall(x: Tree.Node): Tree.Node;
+PROCEDURE ^ CaseStatement(): Tree.Node;
 
 (** designator = qualident {selector}.
      selector = "." ident | "[" ExpList "]" | "^" | "(" qualident ")". *)
@@ -492,7 +493,8 @@ BEGIN
   ELSIF Skipped(S.while) THEN
     statement := WhileStatement()
   ELSIF sym = S.case THEN
-    Machine.NotImplemented('case statement')
+    S.Get(sym);
+    statement := CaseStatement()
   ELSIF Skipped(S.repeat) THEN
     statement := RepeatStatement()
   ELSIF Skipped(S.for) THEN
@@ -552,6 +554,60 @@ BEGIN
     const := Builder.NewIntConst(0)
   END
 RETURN const END ConstExpression;
+
+(** CaseStatement = CASE expression OF case {"|" case} END.
+    case = [caseLabelList ":" StatementSequence].
+    caseLabelList = caseLabels {"," caseLabels}.
+    caseLabels = constExpr [".." constExpr]. *)
+PROCEDURE CaseStatement(): Tree.Node;
+VAR caseNode, doNode, labelNode, uptoNode: Tree.Node;
+  selectorExpr: Tree.Node;
+  lo, hi: Tree.Node;
+  firstDo, lastDo, firstLabel, lastLabel: Tree.Node;
+BEGIN
+  selectorExpr := Expression();
+  Skip(S.of);
+
+  firstDo  := NIL; lastDo  := NIL;
+
+  (* Skip leading bars *)
+  WHILE sym = S.bar DO S.Get(sym) END;
+
+  WHILE (sym # S.end) & ~Machine.hadErrors DO
+    (* Build label list for this branch *)
+    firstLabel := NIL; lastLabel := NIL;
+    REPEAT
+      lo := ConstExpression();
+      IF sym = S.upto THEN
+        S.Get(sym);
+        hi := ConstExpression();
+        uptoNode := Tree.NewNode(Tree.NUpTo);
+        uptoNode.left  := lo;
+        uptoNode.right := hi;
+        labelNode := uptoNode
+      ELSE
+        labelNode := lo
+      END;
+      Builder.Link(firstLabel, lastLabel, labelNode);
+      IF sym = S.comma THEN S.Get(sym) END
+    UNTIL (sym = S.colon) OR Machine.hadErrors;
+    Skip(S.colon);
+
+    doNode := Tree.NewNode(Tree.NCaseDo);
+    doNode.left  := firstLabel;
+    doNode.right := StatementSequence();
+    Builder.Link(firstDo, lastDo, doNode);
+
+    (* Skip bars between branches *)
+    WHILE sym = S.bar DO S.Get(sym) END
+  END;
+
+  Skip(S.end);
+
+  caseNode := Tree.NewNode(Tree.NCase);
+  caseNode.left  := selectorExpr;
+  caseNode.right := firstDo
+RETURN caseNode END CaseStatement;
 
 (** ConstDeclaration = identdef "=" ConstExpression.
      identdef = ident. *)
