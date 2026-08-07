@@ -91,21 +91,19 @@ BEGIN
         Machine.Error(Errors.badMonadicOperand)
       END
     END;
-    mondaic := x  (* Return the modified constant node, not uninitialized mondaic *)
+    mondaic := x
   ELSE
     mondaic := Tree.NewNode(Tree.NMonadic);
-    (* Mapping unary operations *)
     IF op = S.minus THEN
       mondaic.subclass := Tree.minus
     ELSIF op = S.not THEN
       mondaic.subclass := Tree.not
     ELSE
-      mondaic.subclass := op
+      ASSERT(FALSE) (*TODO*)
     END;
     mondaic.type := x.type; (*FIXME*)
     mondaic.left := x
   END
-
 RETURN mondaic END MonadicOperator;
 
 (** Performs an optimized dyadic operation op on NConst nodes x and y.
